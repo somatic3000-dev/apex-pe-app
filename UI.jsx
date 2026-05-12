@@ -1,5 +1,0 @@
-export function Sparkline({data=[],color="var(--accent)"}){if(!data.length)return null;const max=Math.max(...data),min=Math.min(...data),r=max-min||1;return <div className="sparkline">{data.map((v,i)=><div key={i} className="spark-bar" style={{height:`${((v-min)/r)*85+15}%`,background:color}}/>)}</div>}
-export function ProgressBar({label,value,max=100,color="var(--accent)"}){const pct=Math.min(value/max*100,100);return <div className="progress-row"><div className="progress-header"><span>{label}</span><b>{value}{max===100?"%":"x"}</b></div><div className="progress-track"><div className="progress-fill" style={{width:`${pct}%`,background:color}}/></div></div>}
-export function ScoreBar({value}){const color=value>=80?"var(--accent)":value>=60?"var(--orange)":"var(--red)";return <div className="score-bar"><div className="score-track"><div className="score-fill" style={{width:`${value}%`,background:color}}/></div><b style={{color}}>{value}</b></div>}
-export function Pill({type="gray",children}){return <span className={`pill pill-${type}`}><span className="dot"/>{children}</span>}
-export function Spinner(){return <span className="spin">⟳</span>}
