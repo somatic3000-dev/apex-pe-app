@@ -2,169 +2,90 @@
 
 export const initialFund = {
   name: "APEX CAPITAL FUND I",
-
   vintage: 2022,
-
-  commitments: 150,
-
-  calledCapital: 105,
-
-  deployed: 75,
-
+  aum: 120,
   dryPowder: 45,
-
-  distributions: 18,
-
-  managementFeeReserve: 6,
-
-  targetGrossIrr: 25,
-
-  targetNetIrr: 18,
-
-  targetMoic: 2.5,
-
-  dpi: 0.17,
-
-  tvpi: 1.62,
-
-  netIrr: 17.8,
+  deployed: 75,
 };
 
 export const initialPortfolio = [
   {
     id: 1,
-
     name: "Alpha Software",
-
     sector: "Software",
-
     revenue: 42,
-
     ebitda: 11,
-
     entryMultiple: 8,
-
     currentMultiple: 11,
-
     irr: 28,
-
     moic: 2.4,
-
     status: "Active",
-
-    notes:
-      "Starkes Wachstum im SaaS-Bereich.",
+    notes: "Starkes Wachstum im SaaS-Bereich.",
   },
 
   {
     id: 2,
-
     name: "MedTech Labs",
-
     sector: "Healthcare",
-
     revenue: 31,
-
     ebitda: 7,
-
     entryMultiple: 9,
-
     currentMultiple: 10,
-
     irr: 19,
-
     moic: 1.8,
-
     status: "Active",
-
-    notes:
-      "Expansion nach Frankreich.",
+    notes: "Expansion nach Frankreich.",
   },
 
   {
     id: 3,
-
     name: "Green Energy GmbH",
-
     sector: "Energy",
-
     revenue: 55,
-
     ebitda: 13,
-
     entryMultiple: 7,
-
     currentMultiple: 8,
-
     irr: 14,
-
     moic: 1.4,
-
     status: "Watchlist",
-
-    notes:
-      "Capex-intensives Geschäft.",
+    notes: "Capex-intensives Geschäft.",
   },
 ];
 
 export const initialDeals = [
   {
     id: 1,
-
     name: "HealthCorp",
-
     sector: "Healthcare",
-
     revenue: 80,
-
     ebitda: 16,
-
     multiple: 9,
-
     status: "LOI",
-
     priority: "High",
-
     score: 82,
   },
 
   {
     id: 2,
-
     name: "CloudBase",
-
     sector: "Software",
-
     revenue: 45,
-
     ebitda: 12,
-
     multiple: 11,
-
     status: "NDA",
-
     priority: "Medium",
-
     score: 68,
   },
 
   {
     id: 3,
-
     name: "Industrial Systems",
-
     sector: "Industrials",
-
     revenue: 120,
-
     ebitda: 18,
-
     multiple: 7,
-
     status: "Screening",
-
     priority: "Low",
-
     score: 55,
   },
 ];
@@ -177,86 +98,86 @@ export const WATCH_SYMBOLS = [
   "GOOGL",
   "META",
   "TSLA",
+  "SPY",
+  "QQQ",
+  "HYG",
+  "LQD",
+  "BX",
+  "KKR",
+  "APO",
+  "CG",
 ];
+
+export const IC_MEMO_TEMPLATE = {
+  company: "",
+  sector: "",
+  investmentThesis: "",
+  risks: "",
+  valuation: "",
+  recommendation: "",
+};
 
 export const NAV = [
   {
     id: "dashboard",
-
     label: "Dashboard",
-
     icon: "◈",
-
     section: "ÜBERSICHT",
   },
 
   {
     id: "markt",
-
     label: "Marktdaten",
-
     icon: "◎",
-
     section: "ÜBERSICHT",
   },
 
   {
     id: "portfolio",
-
     label: "Portfolio",
-
     icon: "▣",
-
     section: "PORTFOLIO",
   },
 
   {
     id: "pipeline",
-
     label: "Deal Pipeline",
-
     icon: "◉",
-
     section: "PORTFOLIO",
   },
 
   {
     id: "lbo",
-
     label: "LBO Rechner",
-
     icon: "∑",
-
     section: "ANALYSE",
   },
 
   {
     id: "ai",
-
     label: "KI Berater",
-
     icon: "◆",
+    section: "ANALYSE",
+  },
 
+  {
+    id: "ic",
+    label: "IC Memo",
+    icon: "▦",
     section: "ANALYSE",
   },
 
   {
     id: "reporting",
-
     label: "LP Reporting",
-
     icon: "▤",
-
     section: "REPORTING",
   },
 
   {
     id: "settings",
-
     label: "Settings",
-
     icon: "⚙",
-
     section: "SYSTEM",
   },
 ];
