@@ -1,3 +1,15 @@
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
 export default function Dashboard({ fund = {}, portfolio = [] }) {
   const active = portfolio.filter((p) => p.status === "Active");
   const exits = portfolio.filter((p) => p.status === "Exit");
@@ -15,8 +27,23 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
       ? active.reduce((s, p) => s + (Number(p.moic) || 0), 0) / active.length
       : 0;
 
-  const ebitdaMargin =
-    totalRevenue > 0 ? (totalEbitda / totalRevenue) * 100 : 0;
+  const ebitdaMargin = totalRevenue > 0 ? (totalEbitda / totalRevenue) * 100 : 0;
+
+  const chartData = active.map((p) => ({
+    name: p.name,
+    revenue: Number(p.revenue) || 0,
+    ebitda: Number(p.ebitda) || 0,
+    irr: Number(p.irr) || 0,
+  }));
+
+  const sectorData = Object.values(
+    active.reduce((acc, p) => {
+      const sector = p.sector || "Other";
+      acc[sector] = acc[sector] || { name: sector, value: 0 };
+      acc[sector].value += Number(p.revenue) || 0;
+      return acc;
+    }, {})
+  );
 
   const topPerformer = [...active].sort(
     (a, b) => (Number(b.irr) || 0) - (Number(a.irr) || 0)
@@ -29,9 +56,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
           <div className="page-title">
             APEX <span>DASHBOARD</span>
           </div>
-          <div className="page-sub">
-            Fund I · Portfolio Operating System
-          </div>
+          <div className="page-sub">Fund I · Portfolio Operating System</div>
         </div>
       </div>
 
@@ -67,9 +92,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
             <div className="market-card-price" style={{ color: "var(--accent)" }}>
               {Number(topPerformer.irr || 0).toFixed(1)}% IRR
             </div>
-            <div className="muted">
-              {Number(topPerformer.moic || 0).toFixed(2)}x MOIC
-            </div>
+            <div className="muted">{Number(topPerformer.moic || 0).toFixed(2)}x MOIC</div>
           </div>
         )}
 
@@ -78,9 +101,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
           <div className="market-card-name">
             {avgIrr >= 25 ? "Top Quartile" : avgIrr >= 15 ? "On Track" : "Needs Attention"}
           </div>
-          <div className="muted">
-            Based on average IRR and MOIC.
-          </div>
+          <div className="muted">Based on average IRR and MOIC.</div>
           <div
             className="market-card-price"
             style={{
@@ -95,6 +116,47 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
             {avgIrr.toFixed(1)}%
           </div>
         </div>
+      </div>
+
+      <div className="market-grid" style={{ marginBottom: 20 }}>
+        <ChartCard title="Revenue / EBITDA">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip />
+              <Bar dataKey="revenue" fill="#c8f542" name="Revenue" />
+              <Bar dataKey="ebitda" fill="#42f5c8" name="EBITDA" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="IRR Ranking">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={[...chartData].sort((a, b) => b.irr - a.irr)}>
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip />
+              <Bar dataKey="irr" fill="#c8f542" name="IRR %" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Sector Mix">
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie data={sectorData} dataKey="value" nameKey="name" outerRadius={90} label>
+                {sectorData.map((_, index) => (
+                  <Cell
+                    key={index}
+                    fill={["#c8f542", "#42f5c8", "#f5a742", "#f54242", "#8f9cff"][index % 5]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       <div className="card">
@@ -139,6 +201,15 @@ function Metric({ label, value }) {
     <div className="metric-card">
       <div className="metric-label">{label}</div>
       <div className="metric-value">{value}</div>
+    </div>
+  );
+}
+
+function ChartCard({ title, children }) {
+  return (
+    <div className="card">
+      <div className="card-title">{title}</div>
+      {children}
     </div>
   );
 }
