@@ -11,7 +11,24 @@ export const initialDeals=[
 {id:2,name:"DataCenter Nord",sector:"Infrastruktur",revenue:48,ebitda:14.2,margin:29.6,multiple:12.1,status:"Screening",score:79,priority:"High"},
 {id:3,name:"Compliance360",sector:"Compliance SaaS",revenue:12,ebitda:3.1,margin:25.8,multiple:10.8,status:"NDA",score:72,priority:"Medium"},
 {id:4,name:"AutoRepair Gruppe",sector:"Auto-Services",revenue:22,ebitda:3.8,margin:17.3,multiple:7.2,status:"Screening",score:58,priority:"Low"}];
-export const WATCH_SYMBOLS=["SPY","BX","KKR","APO","CG","HYG","IWM","LQD"].map(sym=>({sym,name:sym,relevance:"Benchmark"}));
+export const WATCH_SYMBOLS = [
+  { sym: "SPY", name: "S&P 500 ETF", relevance: "US Markt-Benchmark" },
+  { sym: "BX", name: "Blackstone", relevance: "Private Equity Peer" },
+  { sym: "KKR", name: "KKR & Co.", relevance: "Private Equity Peer" },
+  { sym: "APO", name: "Apollo Global Management", relevance: "Private Equity Peer" },
+  { sym: "CG", name: "Carlyle Group", relevance: "Private Equity Peer" },
+  { sym: "HYG", name: "High Yield Bond ETF", relevance: "LBO Debt Market" },
+  { sym: "LQD", name: "Investment Grade Bond ETF", relevance: "Credit Market" },
+  { sym: "IWM", name: "Russell 2000 ETF", relevance: "Small Cap Benchmark" },
+
+  { sym: "MSFT", name: "Microsoft", relevance: "Software / AI" },
+  { sym: "NVDA", name: "Nvidia", relevance: "AI Infrastructure" },
+  { sym: "GOOGL", name: "Alphabet", relevance: "Digital / Cloud" },
+  { sym: "AMZN", name: "Amazon", relevance: "Cloud / E-Commerce" },
+  { sym: "META", name: "Meta Platforms", relevance: "Digital Platforms" },
+  { sym: "SAP", name: "SAP", relevance: "Enterprise Software" },
+  { sym: "ASML", name: "ASML", relevance: "Semiconductor Equipment" }
+];
 export const NAV=[
 {id:"dashboard",label:"Dashboard",icon:"◈",section:"ÜBERSICHT"},{id:"markt",label:"Marktdaten",icon:"◎",section:"ÜBERSICHT"},
 {id:"portfolio",label:"Portfolio",icon:"▣",section:"PORTFOLIO"},{id:"pipeline",label:"Deal Pipeline",icon:"◉",section:"PORTFOLIO"},
