@@ -27,7 +27,17 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
       ? active.reduce((s, p) => s + (Number(p.moic) || 0), 0) / active.length
       : 0;
 
-  const ebitdaMargin = totalRevenue > 0 ? (totalEbitda / totalRevenue) * 100 : 0;
+  const ebitdaMargin =
+    totalRevenue > 0 ? (totalEbitda / totalRevenue) * 100 : 0;
+
+  const portfolioValue = active.reduce((sum, p) => {
+    const ebitda = Number(p.ebitda) || 0;
+    const multiple = Number(p.currentMultiple) || Number(p.entryMultiple) || 0;
+
+    return sum + ebitda * multiple;
+  }, 0);
+
+  const dynamicAum = portfolioValue + (Number(fund.dryPowder) || 0);
 
   const chartData = active.map((p) => ({
     name: p.name,
@@ -61,7 +71,9 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
       </div>
 
       <div className="dashboard-grid" style={{ marginBottom: 20 }}>
-        <Metric label="AUM" value={`€${fund.aum || 0}M`} />
+        <Metric label="AUM" value={`€${dynamicAum.toFixed(1)}M`} />
+        <Metric label="Portfolio Value" value={`€${portfolioValue.toFixed(1)}M`} />
+        <Metric label="Dry Powder" value={`€${Number(fund.dryPowder || 0).toFixed(1)}M`} />
         <Metric label="Active Companies" value={active.length} />
         <Metric label="Exits" value={exits.length} />
         <Metric label="Gross IRR" value={`${avgIrr.toFixed(1)}%`} />
@@ -74,13 +86,16 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
       <div className="market-grid" style={{ marginBottom: 20 }}>
         <div className="market-card">
           <div className="card-title">Fund Status</div>
-          <div className="market-card-name">{fund.name || "APEX CAPITAL FUND I"}</div>
+          <div className="market-card-name">
+            {fund.name || "APEX CAPITAL FUND I"}
+          </div>
           <div className="muted">Vintage {fund.vintage || 2022}</div>
           <div className="market-card-price" style={{ color: "var(--accent)" }}>
-            €{fund.aum || 0}M AUM
+            €{dynamicAum.toFixed(1)}M AUM
           </div>
           <div className="muted">
-            Dry Powder: €{fund.dryPowder || 0}M · Deployed: €{fund.deployed || 0}M
+            Portfolio Value: €{portfolioValue.toFixed(1)}M · Dry Powder: €
+            {Number(fund.dryPowder || 0).toFixed(1)}M
           </div>
         </div>
 
@@ -92,14 +107,20 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
             <div className="market-card-price" style={{ color: "var(--accent)" }}>
               {Number(topPerformer.irr || 0).toFixed(1)}% IRR
             </div>
-            <div className="muted">{Number(topPerformer.moic || 0).toFixed(2)}x MOIC</div>
+            <div className="muted">
+              {Number(topPerformer.moic || 0).toFixed(2)}x MOIC
+            </div>
           </div>
         )}
 
         <div className="market-card">
           <div className="card-title">Portfolio Health</div>
           <div className="market-card-name">
-            {avgIrr >= 25 ? "Top Quartile" : avgIrr >= 15 ? "On Track" : "Needs Attention"}
+            {avgIrr >= 25
+              ? "Top Quartile"
+              : avgIrr >= 15
+              ? "On Track"
+              : "Needs Attention"}
           </div>
           <div className="muted">Based on average IRR and MOIC.</div>
           <div
@@ -149,7 +170,11 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
                 {sectorData.map((_, index) => (
                   <Cell
                     key={index}
-                    fill={["#c8f542", "#42f5c8", "#f5a742", "#f54242", "#8f9cff"][index % 5]}
+                    fill={
+                      ["#c8f542", "#42f5c8", "#f5a742", "#f54242", "#8f9cff"][
+                        index % 5
+                      ]
+                    }
                   />
                 ))}
               </Pie>
@@ -170,6 +195,8 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
                 <th>Sektor</th>
                 <th>Revenue</th>
                 <th>EBITDA</th>
+                <th>Multiple</th>
+                <th>Value</th>
                 <th>IRR</th>
                 <th>MOIC</th>
                 <th>Status</th>
@@ -177,17 +204,26 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
             </thead>
 
             <tbody>
-              {portfolio.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.name}</td>
-                  <td>{p.sector}</td>
-                  <td>€{Number(p.revenue || 0).toFixed(1)}m</td>
-                  <td>€{Number(p.ebitda || 0).toFixed(1)}m</td>
-                  <td>{Number(p.irr || 0).toFixed(1)}%</td>
-                  <td>{Number(p.moic || 0).toFixed(2)}x</td>
-                  <td>{p.status}</td>
-                </tr>
-              ))}
+              {portfolio.map((p) => {
+                const ebitda = Number(p.ebitda) || 0;
+                const multiple =
+                  Number(p.currentMultiple) || Number(p.entryMultiple) || 0;
+                const value = ebitda * multiple;
+
+                return (
+                  <tr key={p.id}>
+                    <td>{p.name}</td>
+                    <td>{p.sector}</td>
+                    <td>€{Number(p.revenue || 0).toFixed(1)}m</td>
+                    <td>€{ebitda.toFixed(1)}m</td>
+                    <td>{multiple.toFixed(1)}x</td>
+                    <td>€{value.toFixed(1)}m</td>
+                    <td>{Number(p.irr || 0).toFixed(1)}%</td>
+                    <td>{Number(p.moic || 0).toFixed(2)}x</td>
+                    <td>{p.status}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
