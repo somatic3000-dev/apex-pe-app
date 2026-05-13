@@ -26,6 +26,10 @@ export default function Portfolio() {
   const [editingId, setEditingId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [healthFilter, setHealthFilter] = useState("All");
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
   }, [companies]);
@@ -203,6 +207,22 @@ export default function Portfolio() {
     };
   }
 
+  const filteredCompanies = companies.filter((company) => {
+    const m = calcCompany(company);
+
+    const matchesSearch =
+      (company.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (company.sector || "").toLowerCase().includes(search.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" || company.status === statusFilter;
+
+    const matchesHealth =
+      healthFilter === "All" || m.health === healthFilter;
+
+    return matchesSearch && matchesStatus && matchesHealth;
+  });
+
   const totalRevenue = companies.reduce(
     (sum, c) => sum + (Number(c.revenue) || 0),
     0
@@ -257,6 +277,51 @@ export default function Portfolio() {
           <button className="btn btn-ghost btn-sm" onClick={resetPortfolio}>
             RESET
           </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">Search & Filter</div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+            gap: 12,
+          }}
+        >
+          <input
+            className="input"
+            placeholder="Unternehmen oder Sektor suchen..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="input"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option>All</option>
+            <option>Active</option>
+            <option>Exit</option>
+            <option>Watchlist</option>
+          </select>
+
+          <select
+            className="input"
+            value={healthFilter}
+            onChange={(e) => setHealthFilter(e.target.value)}
+          >
+            <option>All</option>
+            <option>Outperformer</option>
+            <option>On Track</option>
+            <option>Attention</option>
+          </select>
+        </div>
+
+        <div className="muted" style={{ marginTop: 10 }}>
+          Angezeigt: {filteredCompanies.length} von {companies.length} Beteiligungen
         </div>
       </div>
 
@@ -392,7 +457,7 @@ export default function Portfolio() {
       )}
 
       <div className="market-grid">
-        {companies.map((company) => {
+        {filteredCompanies.map((company) => {
           const m = calcCompany(company);
 
           return (
