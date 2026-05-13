@@ -120,9 +120,7 @@ export default function App() {
 
       markt: (
         <MarketData
-          finnhubKey={
-            finnhubKey
-          }
+          finnhubKey={finnhubKey}
           setFinnhubKey={
             setFinnhubKey
           }
@@ -148,7 +146,9 @@ export default function App() {
         />
       ),
 
-      lbo: <LBOCalculator />,
+      lbo: (
+        <LBOCalculator />
+      ),
 
       ai: (
         <AIAdvisor
