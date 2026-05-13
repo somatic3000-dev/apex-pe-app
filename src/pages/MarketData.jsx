@@ -14,13 +14,16 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
   const [newSymbol, setNewSymbol] = useState("");
   const [newName, setNewName] = useState("");
   const [newRelevance, setNewRelevance] = useState("");
-
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(symbols));
   }, [symbols]);
+
+  useEffect(() => {
+    refresh();
+  }, [finnhubKey, symbols]);
 
   async function refresh() {
     if (!finnhubKey) return;
@@ -50,10 +53,6 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
     setLoading(false);
   }
 
-  useEffect(() => {
-    refresh();
-  }, [finnhubKey, symbols]);
-
   function addSymbol() {
     const sym = newSymbol.trim().toUpperCase();
     if (!sym) return;
@@ -76,6 +75,9 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
     setNewName("");
     setNewRelevance("");
   }
+
+  function removeSymbol(sym) {
+    setSymbols((prev) => prev.filter((s) => s.sym !== sym));
 
     setQuotes((prev) => {
       const copy = { ...prev };
@@ -172,7 +174,10 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
             />
           </div>
 
-          <div className="form-group" style={{ display: "flex", gap: 8, alignItems: "end" }}>
+          <div
+            className="form-group"
+            style={{ display: "flex", gap: 8, alignItems: "end" }}
+          >
             <button className="btn btn-primary" onClick={addSymbol}>
               + HINZUFÜGEN
             </button>
@@ -191,7 +196,13 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
 
           return (
             <div className="market-card" key={sym}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
                 <div>
                   <div className="market-card-sym">
                     {sym} · {relevance}
@@ -240,20 +251,4 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
       </div>
     </div>
   );
-}
-const [symbols, setSymbols] = useState(WATCH_SYMBOLS);
-const [newSymbol, setNewSymbol] = useState("");
-function addSymbol() {
-  if (!newSymbol) return;
-
-  setSymbols([
-    ...symbols,
-    {
-      sym: newSymbol.toUpperCase(),
-      name: newSymbol.toUpperCase(),
-      relevance: "Custom"
-    }
-  ]);
-
-  setNewSymbol("");
 }
