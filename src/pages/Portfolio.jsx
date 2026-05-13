@@ -101,6 +101,55 @@ export default function Portfolio() {
     cancelEdit();
   }
 
+  function exportCsv() {
+    const headers = [
+      "Name",
+      "Sector",
+      "Revenue",
+      "EBITDA",
+      "Entry Multiple",
+      "Current Multiple",
+      "IRR",
+      "MOIC",
+      "Status",
+      "Notes",
+    ];
+
+    const rows = companies.map((c) => [
+      c.name,
+      c.sector,
+      c.revenue,
+      c.ebitda,
+      c.entryMultiple,
+      c.currentMultiple,
+      c.irr,
+      c.moic,
+      c.status,
+      c.notes,
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`)
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "apex-portfolio.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
   function calcCompany(company) {
     const revenue = Number(company?.revenue) || 0;
     const ebitda = Number(company?.ebitda) || 0;
@@ -200,9 +249,15 @@ export default function Portfolio() {
           </div>
         </div>
 
-        <button className="btn btn-ghost btn-sm" onClick={resetPortfolio}>
-          RESET
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={exportCsv}>
+            CSV EXPORT
+          </button>
+
+          <button className="btn btn-ghost btn-sm" onClick={resetPortfolio}>
+            RESET
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-grid" style={{ marginBottom: 20 }}>
