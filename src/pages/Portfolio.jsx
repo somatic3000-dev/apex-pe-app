@@ -19,20 +19,19 @@ export default function Portfolio() {
     irr: "",
     moic: "",
     status: "Active",
+    notes: "",
   };
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
   }, [companies]);
 
   function updateForm(key, value) {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   function saveCompany() {
@@ -49,14 +48,17 @@ export default function Portfolio() {
       irr: Number(form.irr) || 0,
       moic: Number(form.moic) || 1,
       status: form.status || "Active",
+      notes: form.notes || "",
     };
 
     if (editingId) {
       setCompanies((prev) =>
         prev.map((c) => (c.id === editingId ? company : c))
       );
+      setSelectedId(company.id);
     } else {
       setCompanies((prev) => [...prev, company]);
+      setSelectedId(company.id);
     }
 
     setForm(emptyForm);
@@ -65,6 +67,7 @@ export default function Portfolio() {
 
   function editCompany(company) {
     setEditingId(company.id);
+    setSelectedId(company.id);
     setForm({
       name: company.name || "",
       sector: company.sector || "",
@@ -75,11 +78,14 @@ export default function Portfolio() {
       irr: company.irr || "",
       moic: company.moic || "",
       status: company.status || "Active",
+      notes: company.notes || "",
     });
   }
 
   function removeCompany(id) {
     setCompanies((prev) => prev.filter((c) => c.id !== id));
+    if (selectedId === id) setSelectedId(null);
+    if (editingId === id) cancelEdit();
   }
 
   function cancelEdit() {
@@ -90,6 +96,7 @@ export default function Portfolio() {
   function resetPortfolio() {
     setCompanies(initialPortfolio);
     localStorage.removeItem(STORAGE_KEY);
+    setSelectedId(null);
     cancelEdit();
   }
 
@@ -115,6 +122,32 @@ export default function Portfolio() {
         companies.length
       : 0;
 
+  const selected = companies.find((c) => c.id === selectedId) || companies[0];
+
+  function calcCompany(company) {
+    const revenue = Number(company?.revenue) || 0;
+    const ebitda = Number(company?.ebitda) || 0;
+    const entryMultiple = Number(company?.entryMultiple) || 0;
+    const currentMultiple = Number(company?.currentMultiple) || entryMultiple;
+    const margin = revenue > 0 ? (ebitda / revenue) * 100 : 0;
+    const entryEv = ebitda * entryMultiple;
+    const currentEv = ebitda * currentMultiple;
+    const multipleExpansion = currentMultiple - entryMultiple;
+
+    return {
+      revenue,
+      ebitda,
+      entryMultiple,
+      currentMultiple,
+      margin,
+      entryEv,
+      currentEv,
+      multipleExpansion,
+    };
+  }
+
+  const selectedMetrics = calcCompany(selected);
+
   return (
     <div className="fade-in">
       <div className="page-header">
@@ -123,7 +156,7 @@ export default function Portfolio() {
             PORT <span>FOLIO</span>
           </div>
           <div className="page-sub">
-            Beteiligungen hinzufügen, bearbeiten und löschen
+            Beteiligungen hinzufügen, bearbeiten, analysieren
           </div>
         </div>
 
@@ -168,77 +201,22 @@ export default function Portfolio() {
             gap: 12,
           }}
         >
-          <input
-            className="input"
-            placeholder="Unternehmen"
-            value={form.name}
-            onChange={(e) => updateForm("name", e.target.value)}
-          />
+          <input className="input" placeholder="Unternehmen" value={form.name} onChange={(e) => updateForm("name", e.target.value)} />
+          <input className="input" placeholder="Sektor" value={form.sector} onChange={(e) => updateForm("sector", e.target.value)} />
+          <input className="input" placeholder="Revenue €m" type="number" value={form.revenue} onChange={(e) => updateForm("revenue", e.target.value)} />
+          <input className="input" placeholder="EBITDA €m" type="number" value={form.ebitda} onChange={(e) => updateForm("ebitda", e.target.value)} />
+          <input className="input" placeholder="Entry Multiple" type="number" value={form.entryMultiple} onChange={(e) => updateForm("entryMultiple", e.target.value)} />
+          <input className="input" placeholder="Current Multiple" type="number" value={form.currentMultiple} onChange={(e) => updateForm("currentMultiple", e.target.value)} />
+          <input className="input" placeholder="IRR %" type="number" value={form.irr} onChange={(e) => updateForm("irr", e.target.value)} />
+          <input className="input" placeholder="MOIC" type="number" value={form.moic} onChange={(e) => updateForm("moic", e.target.value)} />
 
-          <input
-            className="input"
-            placeholder="Sektor"
-            value={form.sector}
-            onChange={(e) => updateForm("sector", e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="Revenue €m"
-            type="number"
-            value={form.revenue}
-            onChange={(e) => updateForm("revenue", e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="EBITDA €m"
-            type="number"
-            value={form.ebitda}
-            onChange={(e) => updateForm("ebitda", e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="Entry Multiple"
-            type="number"
-            value={form.entryMultiple}
-            onChange={(e) => updateForm("entryMultiple", e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="Current Multiple"
-            type="number"
-            value={form.currentMultiple}
-            onChange={(e) => updateForm("currentMultiple", e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="IRR %"
-            type="number"
-            value={form.irr}
-            onChange={(e) => updateForm("irr", e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="MOIC"
-            type="number"
-            value={form.moic}
-            onChange={(e) => updateForm("moic", e.target.value)}
-          />
-
-          <select
-            className="input"
-            value={form.status}
-            onChange={(e) => updateForm("status", e.target.value)}
-          >
+          <select className="input" value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
             <option>Active</option>
             <option>Exit</option>
             <option>Watchlist</option>
           </select>
+
+          <input className="input" placeholder="Notiz" value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} />
 
           <button className="btn btn-primary" onClick={saveCompany}>
             {editingId ? "SPEICHERN" : "HINZUFÜGEN"}
@@ -252,24 +230,72 @@ export default function Portfolio() {
         </div>
       </div>
 
+      {selected && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card-title">Detailansicht</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 20 }}>
+            <div>
+              <h2 style={{ marginBottom: 6 }}>{selected.name}</h2>
+              <div className="muted" style={{ marginBottom: 14 }}>
+                {selected.sector} · {selected.status}
+              </div>
+
+              <div style={{ display: "grid", gap: 8 }}>
+                <div>Revenue: €{selectedMetrics.revenue.toFixed(1)}m</div>
+                <div>EBITDA: €{selectedMetrics.ebitda.toFixed(1)}m</div>
+                <div>EBITDA-Marge: {selectedMetrics.margin.toFixed(1)}%</div>
+                <div>Entry EV: €{selectedMetrics.entryEv.toFixed(1)}m</div>
+                <div>Current EV: €{selectedMetrics.currentEv.toFixed(1)}m</div>
+                <div>Multiple Expansion: {selectedMetrics.multipleExpansion.toFixed(1)}x</div>
+              </div>
+            </div>
+
+            <div>
+              <div className="metric-card" style={{ marginBottom: 10 }}>
+                <div className="metric-label">IRR</div>
+                <div className="metric-value">{Number(selected.irr || 0).toFixed(1)}%</div>
+              </div>
+
+              <div className="metric-card">
+                <div className="metric-label">MOIC</div>
+                <div className="metric-value">{Number(selected.moic || 0).toFixed(2)}x</div>
+              </div>
+            </div>
+          </div>
+
+          {selected.notes && (
+            <div style={{ marginTop: 16 }}>
+              <div className="card-title">Notizen</div>
+              <div className="muted">{selected.notes}</div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="market-grid">
         {companies.map((company) => {
-          const revenue = Number(company.revenue) || 0;
-          const ebitda = Number(company.ebitda) || 0;
-          const margin = revenue > 0 ? (ebitda / revenue) * 100 : 0;
-          const ev =
-            ebitda * (Number(company.currentMultiple) || Number(company.entryMultiple) || 0);
+          const m = calcCompany(company);
 
           return (
-            <div className="market-card" key={company.id}>
+            <div
+              className="market-card"
+              key={company.id}
+              onClick={() => setSelectedId(company.id)}
+              style={{
+                cursor: "pointer",
+                borderColor:
+                  selectedId === company.id ? "var(--accent)" : undefined,
+              }}
+            >
               <div className="market-card-name">{company.name}</div>
               <div className="muted">{company.sector}</div>
 
               <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
-                <div>Revenue: €{revenue.toFixed(1)}m</div>
-                <div>EBITDA: €{ebitda.toFixed(1)}m</div>
-                <div>EBITDA-Marge: {margin.toFixed(1)}%</div>
-                <div>EV: €{ev.toFixed(1)}m</div>
+                <div>Revenue: €{m.revenue.toFixed(1)}m</div>
+                <div>EBITDA: €{m.ebitda.toFixed(1)}m</div>
+                <div>Marge: {m.margin.toFixed(1)}%</div>
+                <div>EV: €{m.currentEv.toFixed(1)}m</div>
                 <div>Status: {company.status}</div>
                 <div>IRR: {Number(company.irr || 0).toFixed(1)}%</div>
                 <div>MOIC: {Number(company.moic || 0).toFixed(2)}x</div>
@@ -278,14 +304,20 @@ export default function Portfolio() {
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 <button
                   className="btn btn-ghost btn-sm"
-                  onClick={() => editCompany(company)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    editCompany(company);
+                  }}
                 >
                   BEARBEITEN
                 </button>
 
                 <button
                   className="btn btn-danger btn-sm"
-                  onClick={() => removeCompany(company.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeCompany(company.id);
+                  }}
                 >
                   LÖSCHEN
                 </button>
