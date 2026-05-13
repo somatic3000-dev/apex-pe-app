@@ -5,17 +5,11 @@ export default async function handler(req, res) {
     });
   }
 
-  const { message, portfolio = [], deals = [] } = req.body;
-
-  if (!message) {
-    return res.status(400).json({
-      error: "Message fehlt",
-    });
-  }
-
   try {
+    const { message, portfolio = [], deals = [] } = req.body;
+
     const response = await fetch(
-      "https://api.openai.com/v1/responses",
+      "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
         headers: {
@@ -23,12 +17,12 @@ export default async function handler(req, res) {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-5.1",
-          input: [
+          model: "gpt-4.1-mini",
+          messages: [
             {
               role: "system",
               content:
-                "Du bist ein erfahrener Private-Equity-Partner. Analysiere Portfolio, Deals, Risiken, Value Creation, LBO-Logik und Exit-Optionen. Antworte präzise, zahlenorientiert und auf Deutsch.",
+                "Du bist ein Elite Private Equity Investment Partner. Analysiere Deals, Risiken, Renditen, MOIC, IRR, Value Creation und Exit Strategien. Antworte professionell und präzise auf Deutsch.",
             },
             {
               role: "user",
@@ -44,6 +38,7 @@ ${message}
               `,
             },
           ],
+          temperature: 0.7,
         }),
       }
     );
@@ -52,23 +47,13 @@ ${message}
 
     console.log(JSON.stringify(data, null, 2));
 
-    let text = "Keine Antwort erhalten.";
+    const text =
+      data?.choices?.[0]?.message?.content ||
+      "Keine Antwort erhalten.";
 
-    if (data.output_text) {
-      text = data.output_text;
-    } else if (
-      data.output &&
-      data.output[0] &&
-      data.output[0].content &&
-      data.output[0].content[0]
-    ) {
-      text =
-        data.output[0].content[0].text ||
-        data.output[0].content[0].value ||
-        JSON.stringify(data.output[0].content[0]);
-    }
-
-    return res.status(200).json({ text });
+    return res.status(200).json({
+      text,
+    });
   } catch (error) {
     console.error(error);
 
