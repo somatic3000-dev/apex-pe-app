@@ -2,7 +2,12 @@ import { useState } from "react";
 import { WATCH_SYMBOLS } from "../data/mockData";
 
 export default function MarketData() {
-  const [symbols, setSymbols] = useState(WATCH_SYMBOLS);
+  const STORAGE_KEY = "apex_market_watchlist";
+
+const [symbols, setSymbols] = useState(() => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  return saved ? JSON.parse(saved) : WATCH_SYMBOLS;
+});
   const [ticker, setTicker] = useState("");
 
   function addSymbol() {
