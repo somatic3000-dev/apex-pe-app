@@ -41,6 +41,10 @@ export default function DealPipeline() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deals));
   }, [deals]);
@@ -207,6 +211,21 @@ export default function DealPipeline() {
     URL.revokeObjectURL(url);
   }
 
+  const filteredDeals = [...deals]
+    .filter((deal) => {
+      const matchesSearch =
+        (deal.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (deal.sector || "").toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = statusFilter === "All" || deal.status === statusFilter;
+
+      const matchesPriority =
+        priorityFilter === "All" || deal.priority === priorityFilter;
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    })
+    .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
+
   const totalPipelineRevenue = deals.reduce(
     (sum, d) => sum + (Number(d.revenue) || 0),
     0
@@ -255,6 +274,51 @@ export default function DealPipeline() {
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">Search & Filter</div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+            gap: 12,
+          }}
+        >
+          <input
+            className="input"
+            placeholder="Deal suchen..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="input"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option>All</option>
+            {stages.map((stage) => (
+              <option key={stage}>{stage}</option>
+            ))}
+          </select>
+
+          <select
+            className="input"
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+          >
+            <option>All</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+
+        <div className="muted" style={{ marginTop: 10 }}>
+          Angezeigt: {filteredDeals.length} von {deals.length} Deals
+        </div>
+      </div>
+
       <div className="dashboard-grid" style={{ marginBottom: 20 }}>
         <Metric label="Deals" value={deals.length} />
         <Metric label="Pipeline Revenue" value={`€${totalPipelineRevenue.toFixed(1)}m`} />
@@ -278,20 +342,67 @@ export default function DealPipeline() {
             gap: 12,
           }}
         >
-          <input className="input" placeholder="Unternehmen" value={form.name} onChange={(e) => updateForm("name", e.target.value)} />
-          <input className="input" placeholder="Sektor" value={form.sector} onChange={(e) => updateForm("sector", e.target.value)} />
-          <input className="input" placeholder="Revenue €m" type="number" value={form.revenue} onChange={(e) => updateForm("revenue", e.target.value)} />
-          <input className="input" placeholder="EBITDA €m" type="number" value={form.ebitda} onChange={(e) => updateForm("ebitda", e.target.value)} />
-          <input className="input" placeholder="EV/EBITDA Multiple" type="number" value={form.multiple} onChange={(e) => updateForm("multiple", e.target.value)} />
-          <input className="input" placeholder="Score 0-100" type="number" value={form.score} onChange={(e) => updateForm("score", e.target.value)} />
+          <input
+            className="input"
+            placeholder="Unternehmen"
+            value={form.name}
+            onChange={(e) => updateForm("name", e.target.value)}
+          />
 
-          <select className="input" value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
+          <input
+            className="input"
+            placeholder="Sektor"
+            value={form.sector}
+            onChange={(e) => updateForm("sector", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="Revenue €m"
+            type="number"
+            value={form.revenue}
+            onChange={(e) => updateForm("revenue", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="EBITDA €m"
+            type="number"
+            value={form.ebitda}
+            onChange={(e) => updateForm("ebitda", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="EV/EBITDA Multiple"
+            type="number"
+            value={form.multiple}
+            onChange={(e) => updateForm("multiple", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="Score 0-100"
+            type="number"
+            value={form.score}
+            onChange={(e) => updateForm("score", e.target.value)}
+          />
+
+          <select
+            className="input"
+            value={form.status}
+            onChange={(e) => updateForm("status", e.target.value)}
+          >
             {stages.map((stage) => (
               <option key={stage}>{stage}</option>
             ))}
           </select>
 
-          <select className="input" value={form.priority} onChange={(e) => updateForm("priority", e.target.value)}>
+          <select
+            className="input"
+            value={form.priority}
+            onChange={(e) => updateForm("priority", e.target.value)}
+          >
             <option>High</option>
             <option>Medium</option>
             <option>Low</option>
@@ -321,7 +432,10 @@ export default function DealPipeline() {
         >
           {stages.map((stage) => {
             const stageDeals = deals.filter((d) => d.status === stage);
-            const stageEv = stageDeals.reduce((sum, d) => sum + calcDeal(d).ev, 0);
+            const stageEv = stageDeals.reduce(
+              (sum, d) => sum + calcDeal(d).ev,
+              0
+            );
             const probability = stageProbability[stage] ?? 0;
 
             return (
@@ -329,7 +443,9 @@ export default function DealPipeline() {
                 <div className="market-card-sym">{stage}</div>
                 <div className="market-card-price">{stageDeals.length}</div>
                 <div className="muted">EV: €{stageEv.toFixed(1)}m</div>
-                <div className="muted">Prob.: {(probability * 100).toFixed(0)}%</div>
+                <div className="muted">
+                  Prob.: {(probability * 100).toFixed(0)}%
+                </div>
               </div>
             );
           })}
@@ -337,56 +453,61 @@ export default function DealPipeline() {
       </div>
 
       <div className="market-grid">
-        {[...deals]
-          .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
-          .map((deal) => {
-            const m = calcDeal(deal);
+        {filteredDeals.map((deal) => {
+          const m = calcDeal(deal);
 
-            const priorityColor =
-              deal.priority === "High"
-                ? "var(--accent)"
-                : deal.priority === "Medium"
-                ? "var(--orange)"
-                : "var(--muted)";
+          const priorityColor =
+            deal.priority === "High"
+              ? "var(--accent)"
+              : deal.priority === "Medium"
+              ? "var(--orange)"
+              : "var(--muted)";
 
-            return (
-              <div className="market-card" key={deal.id}>
-                <div className="market-card-name">{deal.name}</div>
-                <div className="muted">{deal.sector}</div>
+          return (
+            <div className="market-card" key={deal.id}>
+              <div className="market-card-name">{deal.name}</div>
+              <div className="muted">{deal.sector}</div>
 
-                <div style={{ marginTop: 10, color: m.qualityColor, fontSize: 12, fontWeight: 700 }}>
-                  {m.quality}
-                </div>
-
-                {m.icReady && (
-                  <div style={{ color: "var(--accent)", fontSize: 12, marginTop: 6 }}>
-                    IC READY
-                  </div>
-                )}
-
-                <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
-                  <div>Revenue: €{m.revenue.toFixed(1)}m</div>
-                  <div>EBITDA: €{m.ebitda.toFixed(1)}m</div>
-                  <div>Marge: {m.margin.toFixed(1)}%</div>
-                  <div>EV: €{m.ev.toFixed(1)}m</div>
-                  <div>Weighted EV: €{m.weightedValue.toFixed(1)}m</div>
-                  <div>Status: {deal.status}</div>
-                  <div style={{ color: priorityColor }}>Priorität: {deal.priority}</div>
-                  <div>Score: {Number(deal.score || 0).toFixed(0)}/100</div>
-                </div>
-
-                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => editDeal(deal)}>
-                    BEARBEITEN
-                  </button>
-
-                  <button className="btn btn-danger btn-sm" onClick={() => removeDeal(deal.id)}>
-                    LÖSCHEN
-                  </button>
-                </div>
+              <div
+                style={{
+                  marginTop: 10,
+                  color: m.qualityColor,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {m.quality}
               </div>
-            );
-          })}
+
+              {m.icReady && (
+                <div style={{ color: "var(--accent)", fontSize: 12, marginTop: 6 }}>
+                  IC READY
+                </div>
+              )}
+
+              <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
+                <div>Revenue: €{m.revenue.toFixed(1)}m</div>
+                <div>EBITDA: €{m.ebitda.toFixed(1)}m</div>
+                <div>Marge: {m.margin.toFixed(1)}%</div>
+                <div>EV: €{m.ev.toFixed(1)}m</div>
+                <div>Weighted EV: €{m.weightedValue.toFixed(1)}m</div>
+                <div>Status: {deal.status}</div>
+                <div style={{ color: priorityColor }}>Priorität: {deal.priority}</div>
+                <div>Score: {Number(deal.score || 0).toFixed(0)}/100</div>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => editDeal(deal)}>
+                  BEARBEITEN
+                </button>
+
+                <button className="btn btn-danger btn-sm" onClick={() => removeDeal(deal.id)}>
+                  LÖSCHEN
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
