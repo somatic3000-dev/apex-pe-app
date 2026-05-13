@@ -77,9 +77,6 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
     setNewRelevance("");
   }
 
-  function removeSymbol(sym) {
-    setSymbols((prev) => prev.filter((s) => s.sym !== sym));
-
     setQuotes((prev) => {
       const copy = { ...prev };
       delete copy[sym];
@@ -243,4 +240,20 @@ export default function MarketData({ finnhubKey, setFinnhubKey }) {
       </div>
     </div>
   );
+}
+const [symbols, setSymbols] = useState(WATCH_SYMBOLS);
+const [newSymbol, setNewSymbol] = useState("");
+function addSymbol() {
+  if (!newSymbol) return;
+
+  setSymbols([
+    ...symbols,
+    {
+      sym: newSymbol.toUpperCase(),
+      name: newSymbol.toUpperCase(),
+      relevance: "Custom"
+    }
+  ]);
+
+  setNewSymbol("");
 }
