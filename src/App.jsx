@@ -16,32 +16,51 @@ import DealPipeline from "./pages/DealPipeline";
 import LBOCalculator from "./pages/LBOCalculator";
 import AIAdvisor from "./pages/AIAdvisor";
 import Reporting from "./pages/Reporting";
-import Settings from "./pages/Settings";
+import ICMemo from "./pages/ICMemo";
 
 const loadSaved = (key, fallback) => {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+
+    return raw
+      ? JSON.parse(raw)
+      : fallback;
   } catch {
     return fallback;
   }
 };
 
 export default function App() {
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] =
+    useState("dashboard");
 
-  const [fund] = useState(initialFund);
+  const [fund] =
+    useState(initialFund);
 
-  const [portfolio, setPortfolio] = useState(() =>
-    loadSaved("apex_portfolio", initialPortfolio)
-  );
+  const [portfolio, setPortfolio] =
+    useState(() =>
+      loadSaved(
+        "apex_portfolio",
+        initialPortfolio
+      )
+    );
 
-  const [deals, setDeals] = useState(() =>
-    loadSaved("apex_deals", initialDeals)
-  );
+  const [deals, setDeals] =
+    useState(() =>
+      loadSaved(
+        "apex_deals",
+        initialDeals
+      )
+    );
 
-  const [finnhubKey, setFinnhubKey] = useState(
-    () => localStorage.getItem("apex_finnhub_key") || ""
+  const [
+    finnhubKey,
+    setFinnhubKey,
+  ] = useState(
+    () =>
+      localStorage.getItem(
+        "apex_finnhub_key"
+      ) || ""
   );
 
   useEffect(() => {
@@ -71,37 +90,54 @@ export default function App() {
         "Portfolio auf Beispieldaten zurücksetzen?"
       )
     ) {
-      setPortfolio(initialPortfolio);
+      setPortfolio(
+        initialPortfolio
+      );
     }
   };
 
-  const sections = NAV.reduce((acc, nav) => {
-    (acc[nav.section] ||= []).push(nav);
-    return acc;
-  }, {});
+  const sections = NAV.reduce(
+    (acc, navItem) => {
+      (
+        acc[
+          navItem.section
+        ] ||= []
+      ).push(navItem);
 
-  const render = () =>
-    ({
+      return acc;
+    },
+    {}
+  );
+
+  function renderPage() {
+    return {
       dashboard: (
         <Dashboard
           fund={fund}
           portfolio={portfolio}
-          quotes={{}}
         />
       ),
 
       markt: (
         <MarketData
-          finnhubKey={finnhubKey}
-          setFinnhubKey={setFinnhubKey}
+          finnhubKey={
+            finnhubKey
+          }
+          setFinnhubKey={
+            setFinnhubKey
+          }
         />
       ),
 
       portfolio: (
         <Portfolio
           portfolio={portfolio}
-          setPortfolio={setPortfolio}
-          resetPortfolio={resetPortfolio}
+          setPortfolio={
+            setPortfolio
+          }
+          resetPortfolio={
+            resetPortfolio
+          }
         />
       ),
 
@@ -121,22 +157,27 @@ export default function App() {
         />
       ),
 
+      ic: (
+        <ICMemo deals={deals} />
+      ),
+
       reporting: (
         <Reporting
           portfolio={portfolio}
           fund={fund}
         />
       ),
-
-      settings: <Settings />,
-    }[page]);
+    }[page];
+  }
 
   return (
     <div className="app">
       <header className="topbar">
         <div className="topbar-logo">
           APEX PE{" "}
-          <span>Private Equity OS</span>
+          <span>
+            Private Equity OS
+          </span>
         </div>
 
         <span className="badge badge-green">
@@ -144,48 +185,57 @@ export default function App() {
         </span>
 
         <span className="badge badge-blue">
-          €120M AUM
+          €{fund.aum}M AUM
         </span>
 
         <span className="date">
-          {new Date().toLocaleDateString("de-DE")}
+          {new Date().toLocaleDateString(
+            "de-DE"
+          )}
         </span>
       </header>
 
       <nav className="sidebar">
-        {Object.entries(sections).map(
+        {Object.entries(
+          sections
+        ).map(
           ([section, items]) => (
             <div key={section}>
               <div className="nav-section">
                 {section}
               </div>
 
-              {items.map((nav) => (
-                <div
-                  key={nav.id}
-                  className={`nav-item ${
-                    page === nav.id
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setPage(nav.id)
-                  }
-                >
-                  <span className="nav-icon">
-                    {nav.icon}
-                  </span>
+              {items.map(
+                (item) => (
+                  <div
+                    key={item.id}
+                    className={`nav-item ${
+                      page ===
+                      item.id
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setPage(
+                        item.id
+                      )
+                    }
+                  >
+                    <span className="nav-icon">
+                      {item.icon}
+                    </span>
 
-                  {nav.label}
-                </div>
-              ))}
+                    {item.label}
+                  </div>
+                )
+              )}
             </div>
           )
         )}
       </nav>
 
       <main className="main">
-        {render()}
+        {renderPage()}
       </main>
     </div>
   );
