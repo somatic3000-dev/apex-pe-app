@@ -9,58 +9,111 @@ export default function Portfolio() {
     return saved ? JSON.parse(saved) : initialPortfolio;
   });
 
-  const [name, setName] = useState("");
-  const [sector, setSector] = useState("");
-  const [revenue, setRevenue] = useState("");
-  const [ebitda, setEbitda] = useState("");
+  const emptyForm = {
+    name: "",
+    sector: "",
+    revenue: "",
+    ebitda: "",
+    entryMultiple: "",
+    currentMultiple: "",
+    irr: "",
+    moic: "",
+    status: "Active",
+  };
+
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(companies)
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
   }, [companies]);
 
-  function addCompany() {
-    if (!name.trim()) return;
+  function updateForm(key, value) {
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  }
 
-    const newCompany = {
-      id: Date.now(),
-      name,
-      sector,
-      revenue: Number(revenue),
-      ebitda: Number(ebitda),
-      status: "Active",
-      irr: 0,
-      moic: 1,
+  function saveCompany() {
+    if (!form.name.trim()) return;
+
+    const company = {
+      id: editingId || Date.now(),
+      name: form.name,
+      sector: form.sector,
+      revenue: Number(form.revenue) || 0,
+      ebitda: Number(form.ebitda) || 0,
+      entryMultiple: Number(form.entryMultiple) || 0,
+      currentMultiple: Number(form.currentMultiple) || 0,
+      irr: Number(form.irr) || 0,
+      moic: Number(form.moic) || 1,
+      status: form.status || "Active",
     };
 
-    setCompanies((prev) => [
-      ...prev,
-      newCompany,
-    ]);
+    if (editingId) {
+      setCompanies((prev) =>
+        prev.map((c) => (c.id === editingId ? company : c))
+      );
+    } else {
+      setCompanies((prev) => [...prev, company]);
+    }
 
-    setName("");
-    setSector("");
-    setRevenue("");
-    setEbitda("");
+    setForm(emptyForm);
+    setEditingId(null);
+  }
+
+  function editCompany(company) {
+    setEditingId(company.id);
+    setForm({
+      name: company.name || "",
+      sector: company.sector || "",
+      revenue: company.revenue || "",
+      ebitda: company.ebitda || "",
+      entryMultiple: company.entryMultiple || "",
+      currentMultiple: company.currentMultiple || "",
+      irr: company.irr || "",
+      moic: company.moic || "",
+      status: company.status || "Active",
+    });
   }
 
   function removeCompany(id) {
-    setCompanies((prev) =>
-      prev.filter((c) => c.id !== id)
-    );
+    setCompanies((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  function cancelEdit() {
+    setForm(emptyForm);
+    setEditingId(null);
+  }
+
+  function resetPortfolio() {
+    setCompanies(initialPortfolio);
+    localStorage.removeItem(STORAGE_KEY);
+    cancelEdit();
   }
 
   const totalRevenue = companies.reduce(
-    (sum, c) => sum + (c.revenue || 0),
+    (sum, c) => sum + (Number(c.revenue) || 0),
     0
   );
 
   const totalEbitda = companies.reduce(
-    (sum, c) => sum + (c.ebitda || 0),
+    (sum, c) => sum + (Number(c.ebitda) || 0),
     0
   );
+
+  const avgIrr =
+    companies.length > 0
+      ? companies.reduce((sum, c) => sum + (Number(c.irr) || 0), 0) /
+        companies.length
+      : 0;
+
+  const avgMoic =
+    companies.length > 0
+      ? companies.reduce((sum, c) => sum + (Number(c.moic) || 0), 0) /
+        companies.length
+      : 0;
 
   return (
     <div className="fade-in">
@@ -69,164 +122,177 @@ export default function Portfolio() {
           <div className="page-title">
             PORT <span>FOLIO</span>
           </div>
-
           <div className="page-sub">
-            Private Equity Beteiligungen
+            Beteiligungen hinzufügen, bearbeiten und löschen
+          </div>
+        </div>
+
+        <button className="btn btn-ghost btn-sm" onClick={resetPortfolio}>
+          RESET
+        </button>
+      </div>
+
+      <div className="dashboard-grid" style={{ marginBottom: 20 }}>
+        <div className="metric-card">
+          <div className="metric-label">Beteiligungen</div>
+          <div className="metric-value">{companies.length}</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-label">Gesamtumsatz</div>
+          <div className="metric-value">€{totalRevenue.toFixed(1)}m</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-label">Gesamt-EBITDA</div>
+          <div className="metric-value">€{totalEbitda.toFixed(1)}m</div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-label">Ø IRR / MOIC</div>
+          <div className="metric-value">
+            {avgIrr.toFixed(1)}% / {avgMoic.toFixed(2)}x
           </div>
         </div>
       </div>
 
-      <div
-        className="dashboard-grid"
-        style={{ marginBottom: 20 }}
-      >
-        <div className="metric-card">
-          <div className="metric-label">
-            Beteiligungen
-          </div>
-
-          <div className="metric-value">
-            {companies.length}
-          </div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">
-            Gesamtumsatz
-          </div>
-
-          <div className="metric-value">
-            €{totalRevenue.toFixed(1)}m
-          </div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">
-            Gesamt-EBITDA
-          </div>
-
-          <div className="metric-value">
-            €{totalEbitda.toFixed(1)}m
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="card"
-        style={{ marginBottom: 20 }}
-      >
+      <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-title">
-          Neue Beteiligung
+          {editingId ? "Beteiligung bearbeiten" : "Neue Beteiligung"}
         </div>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(180px,1fr))",
+            gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
             gap: 12,
           }}
         >
           <input
             className="input"
             placeholder="Unternehmen"
-            value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
+            value={form.name}
+            onChange={(e) => updateForm("name", e.target.value)}
           />
 
           <input
             className="input"
             placeholder="Sektor"
-            value={sector}
-            onChange={(e) =>
-              setSector(e.target.value)
-            }
+            value={form.sector}
+            onChange={(e) => updateForm("sector", e.target.value)}
           />
 
           <input
             className="input"
-            placeholder="Revenue"
-            value={revenue}
-            onChange={(e) =>
-              setRevenue(e.target.value)
-            }
+            placeholder="Revenue €m"
+            type="number"
+            value={form.revenue}
+            onChange={(e) => updateForm("revenue", e.target.value)}
           />
 
           <input
             className="input"
-            placeholder="EBITDA"
-            value={ebitda}
-            onChange={(e) =>
-              setEbitda(e.target.value)
-            }
+            placeholder="EBITDA €m"
+            type="number"
+            value={form.ebitda}
+            onChange={(e) => updateForm("ebitda", e.target.value)}
           />
 
-          <button
-            className="btn btn-primary"
-            onClick={addCompany}
+          <input
+            className="input"
+            placeholder="Entry Multiple"
+            type="number"
+            value={form.entryMultiple}
+            onChange={(e) => updateForm("entryMultiple", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="Current Multiple"
+            type="number"
+            value={form.currentMultiple}
+            onChange={(e) => updateForm("currentMultiple", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="IRR %"
+            type="number"
+            value={form.irr}
+            onChange={(e) => updateForm("irr", e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="MOIC"
+            type="number"
+            value={form.moic}
+            onChange={(e) => updateForm("moic", e.target.value)}
+          />
+
+          <select
+            className="input"
+            value={form.status}
+            onChange={(e) => updateForm("status", e.target.value)}
           >
-            HINZUFÜGEN
+            <option>Active</option>
+            <option>Exit</option>
+            <option>Watchlist</option>
+          </select>
+
+          <button className="btn btn-primary" onClick={saveCompany}>
+            {editingId ? "SPEICHERN" : "HINZUFÜGEN"}
           </button>
+
+          {editingId && (
+            <button className="btn btn-ghost" onClick={cancelEdit}>
+              ABBRECHEN
+            </button>
+          )}
         </div>
       </div>
 
       <div className="market-grid">
-        {companies.map((company) => (
-          <div
-            className="market-card"
-            key={company.id}
-          >
-            <div className="market-card-name">
-              {company.name}
-            </div>
+        {companies.map((company) => {
+          const revenue = Number(company.revenue) || 0;
+          const ebitda = Number(company.ebitda) || 0;
+          const margin = revenue > 0 ? (ebitda / revenue) * 100 : 0;
+          const ev =
+            ebitda * (Number(company.currentMultiple) || Number(company.entryMultiple) || 0);
 
-            <div className="muted">
-              {company.sector}
-            </div>
+          return (
+            <div className="market-card" key={company.id}>
+              <div className="market-card-name">{company.name}</div>
+              <div className="muted">{company.sector}</div>
 
-            <div
-              style={{
-                marginTop: 12,
-                display: "grid",
-                gap: 6,
-              }}
-            >
-              <div>
-                Umsatz: €
-                {company.revenue}m
+              <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
+                <div>Revenue: €{revenue.toFixed(1)}m</div>
+                <div>EBITDA: €{ebitda.toFixed(1)}m</div>
+                <div>EBITDA-Marge: {margin.toFixed(1)}%</div>
+                <div>EV: €{ev.toFixed(1)}m</div>
+                <div>Status: {company.status}</div>
+                <div>IRR: {Number(company.irr || 0).toFixed(1)}%</div>
+                <div>MOIC: {Number(company.moic || 0).toFixed(2)}x</div>
               </div>
 
-              <div>
-                EBITDA: €
-                {company.ebitda}m
-              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => editCompany(company)}
+                >
+                  BEARBEITEN
+                </button>
 
-              <div>
-                Status: {company.status}
-              </div>
-
-              <div>
-                IRR: {company.irr}%
-              </div>
-
-              <div>
-                MOIC: {company.moic}x
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => removeCompany(company.id)}
+                >
+                  LÖSCHEN
+                </button>
               </div>
             </div>
-
-            <button
-              className="btn btn-danger btn-sm"
-              style={{ marginTop: 12 }}
-              onClick={() =>
-                removeCompany(company.id)
-              }
-            >
-              LÖSCHEN
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
