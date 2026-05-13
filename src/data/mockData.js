@@ -48,3 +48,4 @@ export const WATCH_SYMBOLS = [
   { sym: "SAP", name: "SAP", relevance: "Enterprise Software" },
   { sym: "ASML", name: "ASML", relevance: "Semiconductor Equipment" }
 ];
+// updated watch symbols
