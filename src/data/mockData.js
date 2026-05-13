@@ -26,10 +26,16 @@ export const initialDeals = [
 ];
 
 export const NAV = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "markt", label: "Marktdaten" },
-  { id: "portfolio", label: "Portfolio" },
-  { id: "pipeline", label: "Pipeline" },
+  { id: "dashboard", label: "Dashboard", icon: "◈", section: "ÜBERSICHT" },
+  { id: "markt", label: "Marktdaten", icon: "◎", section: "ÜBERSICHT" },
+
+  { id: "portfolio", label: "Portfolio", icon: "▣", section: "PORTFOLIO" },
+  { id: "pipeline", label: "Pipeline", icon: "◉", section: "PORTFOLIO" },
+
+  { id: "lbo", label: "LBO Rechner", icon: "∑", section: "ANALYSE" },
+  { id: "ai", label: "KI Berater", icon: "◆", section: "ANALYSE" },
+
+  { id: "reporting", label: "LP Reporting", icon: "▤", section: "REPORTING" }
 ];
 export const WATCH_SYMBOLS = [
   { sym: "SPY", name: "S&P 500 ETF", relevance: "US Markt-Benchmark" },
