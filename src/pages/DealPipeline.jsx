@@ -65,11 +65,7 @@ export default function DealPipeline() {
       ["LOI", "Due Diligence", "Closed"].includes(deal.status);
 
     const quality =
-      score >= 80
-        ? "High Conviction"
-        : score >= 60
-        ? "Review"
-        : "Weak";
+      score >= 80 ? "High Conviction" : score >= 60 ? "Review" : "Weak";
 
     const qualityColor =
       quality === "High Conviction"
@@ -150,6 +146,67 @@ export default function DealPipeline() {
     cancelEdit();
   }
 
+  function exportCsv() {
+    const headers = [
+      "Name",
+      "Sector",
+      "Revenue",
+      "EBITDA",
+      "Margin",
+      "Multiple",
+      "EV",
+      "Probability",
+      "Weighted EV",
+      "Status",
+      "Priority",
+      "Score",
+      "IC Ready",
+      "Quality",
+    ];
+
+    const rows = deals.map((deal) => {
+      const m = calcDeal(deal);
+
+      return [
+        deal.name,
+        deal.sector,
+        m.revenue,
+        m.ebitda,
+        m.margin.toFixed(1),
+        m.multiple,
+        m.ev.toFixed(1),
+        `${(m.probability * 100).toFixed(0)}%`,
+        m.weightedValue.toFixed(1),
+        deal.status,
+        deal.priority,
+        deal.score,
+        m.icReady ? "Yes" : "No",
+        m.quality,
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`)
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "apex-deal-pipeline.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
   const totalPipelineRevenue = deals.reduce(
     (sum, d) => sum + (Number(d.revenue) || 0),
     0
@@ -187,9 +244,15 @@ export default function DealPipeline() {
           </div>
         </div>
 
-        <button className="btn btn-ghost btn-sm" onClick={resetDeals}>
-          RESET
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={exportCsv}>
+            CSV EXPORT
+          </button>
+
+          <button className="btn btn-ghost btn-sm" onClick={resetDeals}>
+            RESET
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-grid" style={{ marginBottom: 20 }}>
