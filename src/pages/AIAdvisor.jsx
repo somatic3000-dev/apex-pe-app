@@ -8,10 +8,7 @@ const QUICK_PROMPTS = [
   "Erstelle ein Investment Memo",
 ];
 
-export default function AIAdvisor({
-  portfolio = [],
-  deals = [],
-}) {
+export default function AIAdvisor({ portfolio = [], deals = [] }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -20,84 +17,55 @@ export default function AIAdvisor({
   ]);
 
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function sendMessage(textOverride) {
+  async function sendMessage(textOverride) {
     const text = textOverride || input;
 
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
 
     const userMessage = {
       role: "user",
       text,
     };
 
-    let response =
-      "Analyse abgeschlossen.";
-
-    if (
-      text.toLowerCase().includes("upside")
-    ) {
-      const best =
-        portfolio.sort(
-          (a, b) =>
-            (b.irr || 0) -
-            (a.irr || 0)
-        )[0];
-
-      response = best
-        ? `${best.name} zeigt aktuell das höchste Upside mit ${best.irr}% IRR und ${best.moic}x MOIC.`
-        : "Keine Daten verfügbar.";
-    }
-
-    if (
-      text.toLowerCase().includes("risiko")
-    ) {
-      const risk =
-        portfolio.sort(
-          (a, b) =>
-            (a.score || 0) -
-            (b.score || 0)
-        )[0];
-
-      response = risk
-        ? `${risk.name} weist aktuell das höchste Risiko auf.`
-        : "Keine Risikodaten vorhanden.";
-    }
-
-    if (
-      text.toLowerCase().includes("deal")
-    ) {
-      const topDeal =
-        deals.sort(
-          (a, b) =>
-            (b.score || 0) -
-            (a.score || 0)
-        )[0];
-
-      response = topDeal
-        ? `${topDeal.name} ist aktuell der attraktivste Deal mit einem Score von ${topDeal.score}.`
-        : "Keine Deal-Daten vorhanden.";
-    }
-
-    if (
-      text.toLowerCase().includes("memo")
-    ) {
-      response =
-        "Investment Memo:\n\n• Markt attraktiv\n• EBITDA Wachstum solide\n• Multiple Expansion möglich\n• Empfehlung: Further DD";
-    }
-
-    const assistantMessage = {
-      role: "assistant",
-      text: response,
-    };
-
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      assistantMessage,
-    ]);
-
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: text,
+          portfolio,
+          deals,
+        }),
+      });
+
+      const data = await response.json();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: data.text || data.error || "Keine Antwort erhalten.",
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Fehler beim Abrufen der KI-Antwort.",
+        },
+      ]);
+    }
+
+    setLoading(false);
   }
 
   return (
@@ -109,33 +77,21 @@ export default function AIAdvisor({
           </div>
 
           <div className="page-sub">
-            AI Investment Assistant
+            OpenAI PE Investment Assistant
           </div>
         </div>
       </div>
 
-      <div
-        className="card"
-        style={{ marginBottom: 20 }}
-      >
-        <div className="card-title">
-          Quick Prompts
-        </div>
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">Quick Prompts</div>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-          }}
-        >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           {QUICK_PROMPTS.map((p) => (
             <button
               key={p}
               className="btn btn-ghost btn-sm"
-              onClick={() =>
-                sendMessage(p)
-              }
+              onClick={() => sendMessage(p)}
+              disabled={loading}
             >
               {p}
             </button>
@@ -152,7 +108,7 @@ export default function AIAdvisor({
         }}
       >
         <div className="card-title">
-          AI Chat
+          AI Chat {loading ? "· denkt..." : ""}
         </div>
 
         <div
@@ -169,10 +125,7 @@ export default function AIAdvisor({
             <div
               key={i}
               style={{
-                alignSelf:
-                  msg.role === "user"
-                    ? "flex-end"
-                    : "flex-start",
+                alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
                 maxWidth: "80%",
                 padding: 14,
                 borderRadius: 12,
@@ -186,57 +139,35 @@ export default function AIAdvisor({
                     : "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              <div
-                style={{
-                  fontSize: 12,
-                  opacity: 0.6,
-                  marginBottom: 6,
-                }}
-              >
-                {msg.role === "user"
-                  ? "YOU"
-                  : "APEX AI"}
+              <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 6 }}>
+                {msg.role === "user" ? "YOU" : "APEX AI"}
               </div>
 
-              <div
-                style={{
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.5,
-                }}
-              >
+              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
                 {msg.text}
               </div>
             </div>
           ))}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-          }}
-        >
+        <div style={{ display: "flex", gap: 10 }}>
           <input
             className="input"
             value={input}
-            onChange={(e) =>
-              setInput(e.target.value)
-            }
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Frage den KI Berater..."
+            disabled={loading}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                sendMessage();
-              }
+              if (e.key === "Enter") sendMessage();
             }}
           />
 
           <button
             className="btn btn-primary"
-            onClick={() =>
-              sendMessage()
-            }
+            onClick={() => sendMessage()}
+            disabled={loading}
           >
-            SENDEN
+            {loading ? "..." : "SENDEN"}
           </button>
         </div>
       </div>
