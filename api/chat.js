@@ -1,16 +1,57 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY missing" });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const { message, portfolio = [], deals = [] } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: "Message fehlt" });
+  }
+
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify({
+        model: "gpt-5.1",
+        input: [
+          {
+            role: "system",
+            content:
+              "Du bist ein erfahrener Private-Equity-Partner. Analysiere Portfolio, Deals, Risiken, Value Creation, LBO-Logik und Exit-Optionen. Antworte präzise, zahlenorientiert und auf Deutsch.",
+          },
+          {
+            role: "user",
+            content: `
+PORTFOLIO:
+${JSON.stringify(portfolio, null, 2)}
+
+DEALS:
+${JSON.stringify(deals, null, 2)}
+
+FRAGE:
+${message}
+            `,
+          },
+        ],
+      }),
     });
-    return res.status(response.status).json(await response.json());
-  } catch { return res.status(500).json({ error: "Claude proxy failed" }); }
+
+    const data = await response.json();
+
+    const text =
+      data.output_text ||
+      data.output?.[0]?.content?.[0]?.text ||
+      "Keine Antwort erhalten.";
+
+    return res.status(200).json({ text });
+  } catch (error) {
+    return res.status(500).json({
+      error: "OpenAI Anfrage fehlgeschlagen",
+    });
+  }
 }
