@@ -68,6 +68,7 @@ export default function Portfolio() {
   function editCompany(company) {
     setEditingId(company.id);
     setSelectedId(company.id);
+
     setForm({
       name: company.name || "",
       sector: company.sector || "",
@@ -100,6 +101,59 @@ export default function Portfolio() {
     cancelEdit();
   }
 
+  function calcCompany(company) {
+    const revenue = Number(company?.revenue) || 0;
+    const ebitda = Number(company?.ebitda) || 0;
+    const entryMultiple = Number(company?.entryMultiple) || 0;
+    const currentMultiple = Number(company?.currentMultiple) || entryMultiple;
+    const irr = Number(company?.irr) || 0;
+    const moic = Number(company?.moic) || 0;
+
+    const margin = revenue > 0 ? (ebitda / revenue) * 100 : 0;
+    const entryEv = ebitda * entryMultiple;
+    const currentEv = ebitda * currentMultiple;
+    const multipleExpansion = currentMultiple - entryMultiple;
+    const valueCreation = currentEv - entryEv;
+
+    const health =
+      irr >= 25 && moic >= 2
+        ? "Outperformer"
+        : irr >= 15 && moic >= 1.5
+        ? "On Track"
+        : "Attention";
+
+    const healthColor =
+      health === "Outperformer"
+        ? "var(--accent)"
+        : health === "On Track"
+        ? "var(--orange)"
+        : "var(--red)";
+
+    const warning =
+      margin < 15
+        ? "EBITDA-Marge niedrig"
+        : irr < 15
+        ? "IRR unter Zielrendite"
+        : multipleExpansion < 0
+        ? "Multiple Compression"
+        : "";
+
+    return {
+      revenue,
+      ebitda,
+      entryMultiple,
+      currentMultiple,
+      margin,
+      entryEv,
+      currentEv,
+      multipleExpansion,
+      valueCreation,
+      health,
+      healthColor,
+      warning,
+    };
+  }
+
   const totalRevenue = companies.reduce(
     (sum, c) => sum + (Number(c.revenue) || 0),
     0
@@ -122,30 +176,16 @@ export default function Portfolio() {
         companies.length
       : 0;
 
+  const totalValue = companies.reduce((sum, c) => {
+    const m = calcCompany(c);
+    return sum + m.currentEv;
+  }, 0);
+
+  const attentionCount = companies.filter(
+    (c) => calcCompany(c).health === "Attention"
+  ).length;
+
   const selected = companies.find((c) => c.id === selectedId) || companies[0];
-
-  function calcCompany(company) {
-    const revenue = Number(company?.revenue) || 0;
-    const ebitda = Number(company?.ebitda) || 0;
-    const entryMultiple = Number(company?.entryMultiple) || 0;
-    const currentMultiple = Number(company?.currentMultiple) || entryMultiple;
-    const margin = revenue > 0 ? (ebitda / revenue) * 100 : 0;
-    const entryEv = ebitda * entryMultiple;
-    const currentEv = ebitda * currentMultiple;
-    const multipleExpansion = currentMultiple - entryMultiple;
-
-    return {
-      revenue,
-      ebitda,
-      entryMultiple,
-      currentMultiple,
-      margin,
-      entryEv,
-      currentEv,
-      multipleExpansion,
-    };
-  }
-
   const selectedMetrics = calcCompany(selected);
 
   return (
@@ -156,7 +196,7 @@ export default function Portfolio() {
             PORT <span>FOLIO</span>
           </div>
           <div className="page-sub">
-            Beteiligungen hinzufügen, bearbeiten, analysieren
+            Beteiligungen · Monitoring · Value Creation
           </div>
         </div>
 
@@ -166,27 +206,13 @@ export default function Portfolio() {
       </div>
 
       <div className="dashboard-grid" style={{ marginBottom: 20 }}>
-        <div className="metric-card">
-          <div className="metric-label">Beteiligungen</div>
-          <div className="metric-value">{companies.length}</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">Gesamtumsatz</div>
-          <div className="metric-value">€{totalRevenue.toFixed(1)}m</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">Gesamt-EBITDA</div>
-          <div className="metric-value">€{totalEbitda.toFixed(1)}m</div>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-label">Ø IRR / MOIC</div>
-          <div className="metric-value">
-            {avgIrr.toFixed(1)}% / {avgMoic.toFixed(2)}x
-          </div>
-        </div>
+        <Metric label="Beteiligungen" value={companies.length} />
+        <Metric label="Portfolio Value" value={`€${totalValue.toFixed(1)}m`} />
+        <Metric label="Gesamtumsatz" value={`€${totalRevenue.toFixed(1)}m`} />
+        <Metric label="Gesamt-EBITDA" value={`€${totalEbitda.toFixed(1)}m`} />
+        <Metric label="Ø IRR" value={`${avgIrr.toFixed(1)}%`} />
+        <Metric label="Ø MOIC" value={`${avgMoic.toFixed(2)}x`} />
+        <Metric label="Attention" value={attentionCount} />
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
@@ -237,9 +263,29 @@ export default function Portfolio() {
           <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 20 }}>
             <div>
               <h2 style={{ marginBottom: 6 }}>{selected.name}</h2>
+
               <div className="muted" style={{ marginBottom: 14 }}>
                 {selected.sector} · {selected.status}
               </div>
+
+              <div
+                style={{
+                  display: "inline-block",
+                  color: selectedMetrics.healthColor,
+                  border: `1px solid ${selectedMetrics.healthColor}`,
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  marginBottom: 14,
+                }}
+              >
+                {selectedMetrics.health}
+              </div>
+
+              {selectedMetrics.warning && (
+                <div style={{ color: "var(--red)", marginBottom: 12 }}>
+                  ⚠ {selectedMetrics.warning}
+                </div>
+              )}
 
               <div style={{ display: "grid", gap: 8 }}>
                 <div>Revenue: €{selectedMetrics.revenue.toFixed(1)}m</div>
@@ -247,19 +293,36 @@ export default function Portfolio() {
                 <div>EBITDA-Marge: {selectedMetrics.margin.toFixed(1)}%</div>
                 <div>Entry EV: €{selectedMetrics.entryEv.toFixed(1)}m</div>
                 <div>Current EV: €{selectedMetrics.currentEv.toFixed(1)}m</div>
-                <div>Multiple Expansion: {selectedMetrics.multipleExpansion.toFixed(1)}x</div>
+                <div>Value Creation: €{selectedMetrics.valueCreation.toFixed(1)}m</div>
+                <div>
+                  Multiple Expansion:{" "}
+                  <span
+                    style={{
+                      color:
+                        selectedMetrics.multipleExpansion >= 0
+                          ? "var(--accent)"
+                          : "var(--red)",
+                    }}
+                  >
+                    {selectedMetrics.multipleExpansion.toFixed(1)}x
+                  </span>
+                </div>
               </div>
             </div>
 
             <div>
               <div className="metric-card" style={{ marginBottom: 10 }}>
                 <div className="metric-label">IRR</div>
-                <div className="metric-value">{Number(selected.irr || 0).toFixed(1)}%</div>
+                <div className="metric-value">
+                  {Number(selected.irr || 0).toFixed(1)}%
+                </div>
               </div>
 
               <div className="metric-card">
                 <div className="metric-label">MOIC</div>
-                <div className="metric-value">{Number(selected.moic || 0).toFixed(2)}x</div>
+                <div className="metric-value">
+                  {Number(selected.moic || 0).toFixed(2)}x
+                </div>
               </div>
             </div>
           </div>
@@ -290,6 +353,23 @@ export default function Portfolio() {
             >
               <div className="market-card-name">{company.name}</div>
               <div className="muted">{company.sector}</div>
+
+              <div
+                style={{
+                  marginTop: 10,
+                  color: m.healthColor,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {m.health}
+              </div>
+
+              {m.warning && (
+                <div style={{ color: "var(--red)", fontSize: 12, marginTop: 6 }}>
+                  ⚠ {m.warning}
+                </div>
+              )}
 
               <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
                 <div>Revenue: €{m.revenue.toFixed(1)}m</div>
@@ -326,6 +406,15 @@ export default function Portfolio() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div className="metric-card">
+      <div className="metric-label">{label}</div>
+      <div className="metric-value">{value}</div>
     </div>
   );
 }
