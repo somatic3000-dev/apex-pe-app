@@ -41,37 +41,45 @@ export default function ICMemo({
 
     const risks = [];
 
-    if (margin < 15)
+    if (margin < 15) {
       risks.push(
         "Low EBITDA Margin"
       );
+    }
 
-    if (multiple > 12)
+    if (multiple > 12) {
       risks.push(
         "High Entry Multiple"
       );
+    }
 
-    if (score < 60)
+    if (score < 60) {
       risks.push(
         "Weak IC Score"
       );
+    }
 
     const upside = [];
 
-    if (margin >= 20)
+    if (margin >= 20) {
       upside.push(
         "Strong Profitability"
       );
+    }
 
-    if (score >= 80)
+    if (score >= 80) {
       upside.push(
         "High Conviction"
       );
+    }
 
-    if (deal.priority === "High")
+    if (
+      deal.priority === "High"
+    ) {
       upside.push(
         "High Strategic Priority"
       );
+    }
 
     return {
       margin,
@@ -124,9 +132,7 @@ export default function ICMemo({
                 }}
               >
                 <div>
-                  <div
-                    className="market-card-name"
-                  >
+                  <div className="market-card-name">
                     {deal.name}
                   </div>
 
