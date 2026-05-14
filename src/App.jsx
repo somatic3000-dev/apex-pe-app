@@ -19,108 +19,59 @@ import Reporting from "./pages/Reporting";
 import ICMemo from "./pages/ICMemo";
 import DueDiligence from "./pages/DueDiligence";
 import TaskManager from "./pages/TaskManager";
+import Settings from "./pages/Settings";
 
-const loadSaved = (
-  key,
-  fallback
-) => {
+const loadSaved = (key, fallback) => {
   try {
-    const raw =
-      localStorage.getItem(key);
-
-    return raw
-      ? JSON.parse(raw)
-      : fallback;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
   }
 };
 
 export default function App() {
-  const [page, setPage] =
-    useState("dashboard");
+  const [page, setPage] = useState("dashboard");
+  const [fund] = useState(initialFund);
 
-  const [fund] = useState(
-    initialFund
+  const [portfolio, setPortfolio] = useState(() =>
+    loadSaved("apex_portfolio", initialPortfolio)
   );
 
-  const [portfolio, setPortfolio] =
-    useState(() =>
-      loadSaved(
-        "apex_portfolio",
-        initialPortfolio
-      )
-    );
+  const [deals, setDeals] = useState(() =>
+    loadSaved("apex_deals", initialDeals)
+  );
 
-  const [deals, setDeals] =
-    useState(() =>
-      loadSaved(
-        "apex_deals",
-        initialDeals
-      )
-    );
-
-  const [
-    finnhubKey,
-    setFinnhubKey,
-  ] = useState(
-    () =>
-      localStorage.getItem(
-        "apex_finnhub_key"
-      ) || ""
+  const [finnhubKey, setFinnhubKey] = useState(
+    () => localStorage.getItem("apex_finnhub_key") || ""
   );
 
   useEffect(() => {
-    localStorage.setItem(
-      "apex_portfolio",
-      JSON.stringify(portfolio)
-    );
+    localStorage.setItem("apex_portfolio", JSON.stringify(portfolio));
   }, [portfolio]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "apex_deals",
-      JSON.stringify(deals)
-    );
+    localStorage.setItem("apex_deals", JSON.stringify(deals));
   }, [deals]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "apex_finnhub_key",
-      finnhubKey
-    );
+    localStorage.setItem("apex_finnhub_key", finnhubKey);
   }, [finnhubKey]);
 
-  const resetPortfolio =
-    () => {
-      if (
-        confirm(
-          "Portfolio auf Beispieldaten zurücksetzen?"
-        )
-      ) {
-        setPortfolio(
-          initialPortfolio
-        );
-      }
-    };
+  const resetPortfolio = () => {
+    if (confirm("Portfolio auf Beispieldaten zurücksetzen?")) {
+      setPortfolio(initialPortfolio);
+    }
+  };
 
-  const sections = NAV.reduce(
-    (acc, item) => {
-      if (
-        !acc[item.section]
-      ) {
-        acc[item.section] =
-          [];
-      }
+  const sections = NAV.reduce((acc, item) => {
+    if (!acc[item.section]) {
+      acc[item.section] = [];
+    }
 
-      acc[item.section].push(
-        item
-      );
-
-      return acc;
-    },
-    {}
-  );
+    acc[item.section].push(item);
+    return acc;
+  }, {});
 
   function renderPage() {
     return {
@@ -134,77 +85,49 @@ export default function App() {
 
       markt: (
         <MarketData
-          finnhubKey={
-            finnhubKey
-          }
-          setFinnhubKey={
-            setFinnhubKey
-          }
+          finnhubKey={finnhubKey}
+          setFinnhubKey={setFinnhubKey}
         />
       ),
 
       portfolio: (
         <Portfolio
-          portfolio={
-            portfolio
-          }
-          setPortfolio={
-            setPortfolio
-          }
-          resetPortfolio={
-            resetPortfolio
-          }
+          portfolio={portfolio}
+          setPortfolio={setPortfolio}
+          resetPortfolio={resetPortfolio}
         />
       ),
 
       pipeline: (
         <DealPipeline
           deals={deals}
-          setDeals={
-            setDeals
-          }
+          setDeals={setDeals}
         />
       ),
 
-      lbo: (
-        <LBOCalculator />
-      ),
+      lbo: <LBOCalculator />,
 
       ai: (
         <AIAdvisor
-          portfolio={
-            portfolio
-          }
+          portfolio={portfolio}
           deals={deals}
         />
       ),
 
-      ic: (
-        <ICMemo
-          deals={deals}
-        />
-      ),
+      ic: <ICMemo deals={deals} />,
 
-      dd: (
-        <DueDiligence
-          deals={deals}
-        />
-      ),
+      dd: <DueDiligence deals={deals} />,
 
-      tasks: (
-        <TaskManager
-          deals={deals}
-        />
-      ),
+      tasks: <TaskManager deals={deals} />,
 
       reporting: (
         <Reporting
-          portfolio={
-            portfolio
-          }
+          portfolio={portfolio}
           fund={fund}
         />
       ),
+
+      settings: <Settings />,
     }[page];
   }
 
@@ -212,80 +135,40 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="topbar-logo">
-          APEX PE{" "}
-          <span>
-            Private Equity OS
-          </span>
+          APEX PE <span>Private Equity OS</span>
         </div>
 
-        <span className="badge badge-green">
-          Fund I Active
-        </span>
+        <span className="badge badge-green">Fund I Active</span>
 
         <span className="badge badge-blue">
-          €{fund.aum}M AUM
+          €{fund.aum || fund.commitments || 0}M AUM
         </span>
 
         <span className="date">
-          {new Date().toLocaleDateString(
-            "de-DE"
-          )}
+          {new Date().toLocaleDateString("de-DE")}
         </span>
       </header>
 
       <nav className="sidebar">
-        {Object.entries(
-          sections
-        ).map(
-          ([
-            section,
-            items,
-          ]) => (
-            <div
-              key={section}
-            >
-              <div className="nav-section">
-                {section}
+        {Object.entries(sections).map(([section, items]) => (
+          <div key={section}>
+            <div className="nav-section">{section}</div>
+
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className={`nav-item ${page === item.id ? "active" : ""}`}
+                onClick={() => setPage(item.id)}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                {item.label}
               </div>
-
-              {items.map(
-                (item) => (
-                  <div
-                    key={
-                      item.id
-                    }
-                    className={`nav-item ${
-                      page ===
-                      item.id
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setPage(
-                        item.id
-                      )
-                    }
-                  >
-                    <span className="nav-icon">
-                      {
-                        item.icon
-                      }
-                    </span>
-
-                    {
-                      item.label
-                    }
-                  </div>
-                )
-              )}
-            </div>
-          )
-        )}
+            ))}
+          </div>
+        ))}
       </nav>
 
-      <main className="main">
-        {renderPage()}
-      </main>
+      <main className="main">{renderPage()}</main>
     </div>
   );
 }
