@@ -1,3 +1,5 @@
+// src/pages/Search.jsx
+
 import { useMemo, useState } from "react";
 
 export default function Search({ portfolio = [], deals = [], tasks = [] }) {
@@ -12,12 +14,13 @@ export default function Search({ portfolio = [], deals = [], tasks = [] }) {
       .filter(
         (p) =>
           (p.name || "").toLowerCase().includes(q) ||
-          (p.sector || "").toLowerCase().includes(q)
+          (p.sector || "").toLowerCase().includes(q) ||
+          (p.status || "").toLowerCase().includes(q)
       )
       .map((p) => ({
         type: "Portfolio",
         title: p.name,
-        subtitle: p.sector,
+        subtitle: `${p.sector} · ${p.status}`,
         meta: `${Number(p.irr || 0).toFixed(1)}% IRR · ${Number(
           p.moic || 0
         ).toFixed(2)}x MOIC`,
@@ -28,7 +31,8 @@ export default function Search({ portfolio = [], deals = [], tasks = [] }) {
         (d) =>
           (d.name || "").toLowerCase().includes(q) ||
           (d.sector || "").toLowerCase().includes(q) ||
-          (d.status || "").toLowerCase().includes(q)
+          (d.status || "").toLowerCase().includes(q) ||
+          (d.priority || "").toLowerCase().includes(q)
       )
       .map((d) => ({
         type: "Deal",
@@ -42,7 +46,8 @@ export default function Search({ portfolio = [], deals = [], tasks = [] }) {
         (t) =>
           (t.title || "").toLowerCase().includes(q) ||
           (t.owner || "").toLowerCase().includes(q) ||
-          (t.relatedDeal || "").toLowerCase().includes(q)
+          (t.relatedDeal || "").toLowerCase().includes(q) ||
+          (t.status || "").toLowerCase().includes(q)
       )
       .map((t) => ({
         type: "Task",
@@ -61,6 +66,7 @@ export default function Search({ portfolio = [], deals = [], tasks = [] }) {
           <div className="page-title">
             GLOBAL <span>SEARCH</span>
           </div>
+
           <div className="page-sub">Portfolio · Deals · Tasks</div>
         </div>
       </div>
@@ -70,8 +76,11 @@ export default function Search({ portfolio = [], deals = [], tasks = [] }) {
           className="input"
           placeholder="Suchen..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          style={{ height: 56, fontSize: 18 }}
+          onChange={(event) => setQuery(event.target.value)}
+          style={{
+            height: 56,
+            fontSize: 18,
+          }}
         />
 
         <div className="muted" style={{ marginTop: 10 }}>
@@ -96,7 +105,7 @@ export default function Search({ portfolio = [], deals = [], tasks = [] }) {
                 style={{
                   color,
                   fontSize: 12,
-                  fontWeight: 700,
+                  fontWeight: 800,
                   marginBottom: 8,
                 }}
               >
