@@ -1,25 +1,45 @@
-import { useEffect, useState } from "react";
+// src/pages/MarketData.jsx
+
+import { useEffect, useMemo, useState } from "react";
 import { WATCH_SYMBOLS } from "../data/mockData";
 
+const STORAGE_KEY = "apex_market_watchlist";
+const API_KEY_STORAGE = "apex_finnhub_key";
+
+function normalizeWatchlist(items = []) {
+  return items.map((item) => {
+    if (typeof item === "string") {
+      return {
+        sym: item,
+        name: item,
+        relevance: "Watchlist",
+      };
+    }
+
+    return {
+      sym: item.sym || item.symbol || item.name,
+      name: item.name || item.sym || item.symbol,
+      relevance: item.relevance || "Watchlist",
+    };
+  });
+}
+
 export default function MarketData() {
-  const STORAGE_KEY = "apex_market_watchlist";
-  const API_KEY_STORAGE = "apex_finnhub_key";
+  const defaultSymbols = useMemo(() => normalizeWatchlist(WATCH_SYMBOLS), []);
 
   const [symbols, setSymbols] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : WATCH_SYMBOLS;
+    return saved ? normalizeWatchlist(JSON.parse(saved)) : defaultSymbols;
   });
 
   const [ticker, setTicker] = useState("");
-
-  const [apiKey, setApiKey] = useState(() => {
-    return localStorage.getItem(API_KEY_STORAGE) || "";
-  });
-
+  const [apiKey, setApiKey] = useState(
+    () => localStorage.getItem(API_KEY_STORAGE) || ""
+  );
   const [tempKey, setTempKey] = useState(apiKey);
-
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(symbols));
@@ -30,7 +50,9 @@ export default function MarketData() {
   }, [apiKey]);
 
   useEffect(() => {
-    refreshQuotes();
+    if (apiKey && symbols.length > 0) {
+      refreshQuotes();
+    }
   }, [apiKey, symbols]);
 
   async function refreshQuotes() {
@@ -48,19 +70,30 @@ export default function MarketData() {
 
         const data = await response.json();
 
-        next[item.sym] = {
-          price: data.c,
-          change: data.dp,
-          high: data.h,
-          low: data.l,
-        };
+        if (data && Number(data.c) > 0) {
+          next[item.sym] = {
+            price: Number(data.c) || 0,
+            change: Number(data.dp) || 0,
+            high: Number(data.h) || 0,
+            low: Number(data.l) || 0,
+            open: Number(data.o) || 0,
+            previousClose: Number(data.pc) || 0,
+          };
+        } else {
+          next[item.sym] = null;
+        }
       } catch {
         next[item.sym] = null;
       }
     }
 
     setQuotes(next);
+    setLastUpdated(new Date());
     setLoading(false);
+  }
+
+  function saveApiKey() {
+    setApiKey(tempKey.trim());
   }
 
   function addSymbol() {
@@ -86,15 +119,33 @@ export default function MarketData() {
   }
 
   function removeSymbol(sym) {
-    setSymbols((prev) =>
-      prev.filter((item) => item.sym !== sym)
-    );
+    setSymbols((prev) => prev.filter((item) => item.sym !== sym));
   }
 
   function resetSymbols() {
-    setSymbols(WATCH_SYMBOLS);
+    setSymbols(defaultSymbols);
     localStorage.removeItem(STORAGE_KEY);
   }
+
+  const marketSummary = useMemo(() => {
+    const availableQuotes = Object.values(quotes).filter(Boolean);
+
+    const gainers = availableQuotes.filter((q) => q.change > 0).length;
+    const losers = availableQuotes.filter((q) => q.change < 0).length;
+
+    const avgChange =
+      availableQuotes.length > 0
+        ? availableQuotes.reduce((sum, q) => sum + q.change, 0) /
+          availableQuotes.length
+        : 0;
+
+    return {
+      loaded: availableQuotes.length,
+      gainers,
+      losers,
+      avgChange,
+    };
+  }, [quotes]);
 
   return (
     <div className="fade-in">
@@ -105,7 +156,7 @@ export default function MarketData() {
           </div>
 
           <div className="page-sub">
-            Finnhub Live Watchlist
+            Finnhub Live Watchlist · Public Markets · PE Benchmarks
           </div>
         </div>
 
@@ -118,135 +169,128 @@ export default function MarketData() {
         </button>
       </div>
 
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-title">
-          Finnhub API-Key
-        </div>
+      <div className="dashboard-grid" style={{ marginBottom: 20 }}>
+        <Metric label="Ticker" value={symbols.length} />
+        <Metric label="Loaded" value={marketSummary.loaded} />
+        <Metric label="Gainers" value={marketSummary.gainers} />
+        <Metric label="Losers" value={marketSummary.losers} />
+        <Metric
+          label="Ø Change"
+          value={`${marketSummary.avgChange.toFixed(2)}%`}
+        />
+      </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">Finnhub API-Key</div>
+
+        <div className="market-grid">
           <input
             className="input"
             value={tempKey}
-            onChange={(e) => setTempKey(e.target.value)}
+            onChange={(event) => setTempKey(event.target.value)}
             placeholder="Finnhub API-Key"
           />
 
-          <button
-            className="btn btn-primary"
-            onClick={() => setApiKey(tempKey.trim())}
-          >
+          <button className="btn btn-primary" onClick={saveApiKey}>
             SPEICHERN
           </button>
+        </div>
+
+        <div className="muted" style={{ marginTop: 10 }}>
+          {apiKey
+            ? "API-Key gespeichert. Daten werden lokal im Browser gespeichert."
+            : "Kostenlosen Finnhub API-Key einfügen, um Live-Kurse zu laden."}
         </div>
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-title">
-          Ticker hinzufügen
-        </div>
+        <div className="card-title">Ticker hinzufügen</div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="market-grid">
           <input
             className="input"
             value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
-            placeholder="z. B. AAPL"
+            onChange={(event) => setTicker(event.target.value)}
+            placeholder="z. B. AAPL, MSFT, NVDA"
           />
 
-          <button
-            className="btn btn-primary"
-            onClick={addSymbol}
-          >
+          <button className="btn btn-primary" onClick={addSymbol}>
             HINZUFÜGEN
           </button>
 
-          <button
-            className="btn btn-ghost"
-            onClick={resetSymbols}
-          >
+          <button className="btn btn-ghost" onClick={resetSymbols}>
             RESET
           </button>
         </div>
+
+        {lastUpdated && (
+          <div className="muted" style={{ marginTop: 10 }}>
+            Letztes Update: {lastUpdated.toLocaleString("de-DE")}
+          </div>
+        )}
       </div>
 
       <div className="market-grid">
         {symbols.map((item) => {
           const quote = quotes[item.sym];
-          const positive = quote?.change >= 0;
+          const positive = Number(quote?.change) >= 0;
 
           return (
-            <div
-              className="market-card"
-              key={item.sym}
-            >
-              <div className="market-card-sym">
-                {item.sym}
-              </div>
+            <div className="market-card" key={item.sym}>
+              <div className="muted">{item.sym}</div>
 
-              <div className="market-card-name">
-                {item.name}
-              </div>
+              <div className="market-card-name">{item.name}</div>
 
-              <div className="muted">
-                {item.relevance}
-              </div>
+              <div className="muted">{item.relevance}</div>
 
               {quote ? (
                 <>
                   <div
                     className="market-card-price"
                     style={{
-                      color: positive
-                        ? "var(--accent)"
-                        : "var(--red)",
+                      color: positive ? "var(--accent)" : "var(--red)",
                     }}
                   >
-                    ${quote.price?.toFixed(2)}
+                    ${quote.price.toFixed(2)}
                   </div>
 
                   <div
-                    className="market-card-change"
                     style={{
-                      color: positive
-                        ? "var(--accent)"
-                        : "var(--red)",
+                      color: positive ? "var(--accent)" : "var(--red)",
+                      fontWeight: 800,
+                      marginTop: 6,
                     }}
                   >
                     {positive ? "+" : ""}
-                    {quote.change?.toFixed(2)}%
+                    {quote.change.toFixed(2)}%
                   </div>
 
-                  <div className="muted">
-                    H: ${quote.high?.toFixed(2)} ·
-                    L: ${quote.low?.toFixed(2)}
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 6,
+                      marginTop: 14,
+                    }}
+                  >
+                    <InfoRow label="Open" value={`$${quote.open.toFixed(2)}`} />
+                    <InfoRow label="High" value={`$${quote.high.toFixed(2)}`} />
+                    <InfoRow label="Low" value={`$${quote.low.toFixed(2)}`} />
+                    <InfoRow
+                      label="Prev. Close"
+                      value={`$${quote.previousClose.toFixed(2)}`}
+                    />
                   </div>
                 </>
               ) : (
-                <div className="muted">
-                  {apiKey
-                    ? "Keine Daten"
-                    : "API-Key fehlt"}
+                <div className="muted" style={{ marginTop: 14 }}>
+                  {apiKey ? "Keine Daten verfügbar" : "API-Key fehlt"}
                 </div>
               )}
 
               <button
                 className="btn btn-danger btn-sm"
-                style={{ marginTop: 12 }}
-                onClick={() =>
-                  removeSymbol(item.sym)
-                }
+                style={{ marginTop: 14 }}
+                onClick={() => removeSymbol(item.sym)}
               >
                 LÖSCHEN
               </button>
@@ -254,6 +298,30 @@ export default function MarketData() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+      }}
+    >
+      <span className="muted">{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div className="metric-card">
+      <div className="metric-label">{label}</div>
+      <div className="metric-value">{value}</div>
     </div>
   );
 }
