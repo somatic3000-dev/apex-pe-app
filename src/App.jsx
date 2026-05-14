@@ -51,9 +51,18 @@ export default function App() {
     loadSaved("apex_deals", initialDeals)
   );
 
-  const [tasks, setTasks] = useState(() =>
-    loadSaved("apex_tasks", [])
-  );
+  const [tasks, setTasks] = useState(() => loadSaved("apex_tasks", []));
+
+  const [marketContext, setMarketContext] = useState({
+    quotes: {},
+    summary: {
+      loaded: 0,
+      gainers: 0,
+      losers: 0,
+      avgChange: 0,
+    },
+    lastUpdated: null,
+  });
 
   useEffect(() => {
     localStorage.setItem("apex_portfolio", JSON.stringify(portfolio));
@@ -74,8 +83,16 @@ export default function App() {
   };
 
   const pages = {
-    dashboard: <Dashboard fund={initialFund} portfolio={portfolio} />,
-    markt: <MarketData />,
+    dashboard: (
+      <Dashboard
+        fund={initialFund}
+        portfolio={portfolio}
+        marketContext={marketContext}
+      />
+    ),
+
+    markt: <MarketData onMarketUpdate={setMarketContext} />,
+
     portfolio: (
       <Portfolio
         portfolio={portfolio}
@@ -83,32 +100,36 @@ export default function App() {
         resetPortfolio={resetPortfolio}
       />
     ),
+
     pipeline: <DealPipeline deals={deals} setDeals={setDeals} />,
+
     lbo: <LBOCalculator />,
-    ai: <AIAdvisor portfolio={portfolio} deals={deals} />,
-    reporting: <Reporting fund={initialFund} portfolio={portfolio} />,
-    tasks: (
-      <TaskManager
+
+    ai: (
+      <AIAdvisor
+        portfolio={portfolio}
         deals={deals}
-        tasks={tasks}
-        setTasks={setTasks}
+        marketContext={marketContext}
       />
     ),
+
+    reporting: <Reporting fund={initialFund} portfolio={portfolio} />,
+
+    tasks: <TaskManager deals={deals} tasks={tasks} setTasks={setTasks} />,
+
     notifications: (
       <Notifications
         portfolio={portfolio}
         deals={deals}
         tasks={tasks}
+        marketContext={marketContext}
       />
     ),
-    search: (
-      <Search
-        portfolio={portfolio}
-        deals={deals}
-        tasks={tasks}
-      />
-    ),
-    icmemo: <ICMemo deals={deals} />,
+
+    search: <Search portfolio={portfolio} deals={deals} tasks={tasks} />,
+
+    icmemo: <ICMemo deals={deals} marketContext={marketContext} />,
+
     settings: <Settings />,
   };
 
@@ -121,9 +142,7 @@ export default function App() {
 
         <div className="badge badge-green">LIVE</div>
 
-        <div className="date">
-          {new Date().toLocaleDateString("de-DE")}
-        </div>
+        <div className="date">{new Date().toLocaleDateString("de-DE")}</div>
       </div>
 
       <div className="sidebar">
