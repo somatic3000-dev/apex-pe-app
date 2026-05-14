@@ -19,6 +19,7 @@ const emptyCompany = {
   stage: "Optimize",
   notes: "",
   aiScore: "60",
+  peerTickers: "",
 };
 
 const numberFields = [
@@ -34,6 +35,19 @@ const numberFields = [
   "aiScore",
 ];
 
+function parsePeerTickers(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((ticker) => String(ticker).trim().toUpperCase())
+      .filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(",")
+    .map((ticker) => ticker.trim().toUpperCase())
+    .filter(Boolean);
+}
+
 function normalizeCompany(form, id) {
   const out = {
     id,
@@ -41,6 +55,7 @@ function normalizeCompany(form, id) {
     name: form.name.trim(),
     sector: form.sector.trim(),
     notes: form.notes?.trim() || "",
+    peerTickers: parsePeerTickers(form.peerTickers),
   };
 
   numberFields.forEach((key) => {
@@ -180,6 +195,21 @@ function CompanyForm({ form, setForm, onSave, onCancel, isEdit }) {
             ))}
           </select>
         </div>
+
+        <div>
+          <label className="muted">Public Peers</label>
+          <input
+            className="input"
+            value={
+              Array.isArray(form.peerTickers)
+                ? form.peerTickers.join(", ")
+                : form.peerTickers || ""
+            }
+            onChange={(event) => set("peerTickers", event.target.value)}
+            placeholder="z. B. MSFT, CRM, NOW"
+            style={{ marginTop: 6 }}
+          />
+        </div>
       </div>
 
       <div style={{ marginTop: 14 }}>
@@ -197,14 +227,7 @@ function CompanyForm({ form, setForm, onSave, onCancel, isEdit }) {
         />
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          flexWrap: "wrap",
-          marginTop: 16,
-        }}
-      >
+      <div className="button-row" style={{ marginTop: 16 }}>
         <button className="btn btn-primary" onClick={onSave}>
           {isEdit ? "ÄNDERUNGEN SPEICHERN" : "BETEILIGUNG HINZUFÜGEN"}
         </button>
@@ -229,12 +252,23 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
 
   const selectedMetrics = calcCompany(selectedCompany);
 
+  const selectedPeers = parsePeerTickers(selectedCompany?.peerTickers);
+
   const totals = useMemo(
     () => ({
       count: active.length,
-      revenue: active.reduce((sum, company) => sum + (Number(company.revenue) || 0), 0),
-      ebitda: active.reduce((sum, company) => sum + (Number(company.ebitda) || 0), 0),
-      equity: active.reduce((sum, company) => sum + (Number(company.equity) || 0), 0),
+      revenue: active.reduce(
+        (sum, company) => sum + (Number(company.revenue) || 0),
+        0
+      ),
+      ebitda: active.reduce(
+        (sum, company) => sum + (Number(company.ebitda) || 0),
+        0
+      ),
+      equity: active.reduce(
+        (sum, company) => sum + (Number(company.equity) || 0),
+        0
+      ),
       value: active.reduce((sum, company) => sum + calcCompany(company).currentEv, 0),
     }),
     [portfolio]
@@ -246,7 +280,11 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
   }
 
   function startEdit(company) {
-    setForm({ ...company });
+    setForm({
+      ...company,
+      peerTickers: parsePeerTickers(company.peerTickers).join(", "),
+    });
+
     setMode("edit");
   }
 
@@ -315,11 +353,11 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
           </div>
 
           <div className="page-sub">
-            Beteiligungen · Detail View · Value Creation
+            Beteiligungen · Detail View · Value Creation · Public Peers
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="button-row">
           <button className="btn btn-primary" onClick={startAdd}>
             + BETEILIGUNG
           </button>
@@ -382,7 +420,25 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
                 {selectedCompany.notes || "Keine Notizen hinterlegt."}
               </p>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ marginTop: 14 }}>
+                <div className="card-title" style={{ marginBottom: 8 }}>
+                  Public Peers
+                </div>
+
+                {selectedPeers.length > 0 ? (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {selectedPeers.map((ticker) => (
+                      <Pill key={ticker} type="blue">
+                        {ticker}
+                      </Pill>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="muted">Keine Public Peers hinterlegt.</div>
+                )}
+              </div>
+
+              <div className="button-row" style={{ marginTop: 18 }}>
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={() => startEdit(selectedCompany)}
@@ -400,20 +456,47 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
             </div>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <DetailMetric label="Revenue" value={`€${selectedMetrics.revenue.toFixed(1)}M`} />
-              <DetailMetric label="EBITDA" value={`€${selectedMetrics.ebitda.toFixed(1)}M`} />
-              <DetailMetric label="EBITDA Margin" value={`${selectedMetrics.margin.toFixed(1)}%`} />
-              <DetailMetric label="Entry EV" value={`€${selectedMetrics.entryEv.toFixed(1)}M`} />
-              <DetailMetric label="Current EV" value={`€${selectedMetrics.currentEv.toFixed(1)}M`} />
-              <DetailMetric label="Value Creation" value={`€${selectedMetrics.valueCreation.toFixed(1)}M`} />
-              <DetailMetric label="Multiple Expansion" value={`${selectedMetrics.multipleExpansion.toFixed(1)}x`} />
+              <DetailMetric
+                label="Revenue"
+                value={`€${selectedMetrics.revenue.toFixed(1)}M`}
+              />
+              <DetailMetric
+                label="EBITDA"
+                value={`€${selectedMetrics.ebitda.toFixed(1)}M`}
+              />
+              <DetailMetric
+                label="EBITDA Margin"
+                value={`${selectedMetrics.margin.toFixed(1)}%`}
+              />
+              <DetailMetric
+                label="Entry EV"
+                value={`€${selectedMetrics.entryEv.toFixed(1)}M`}
+              />
+              <DetailMetric
+                label="Current EV"
+                value={`€${selectedMetrics.currentEv.toFixed(1)}M`}
+              />
+              <DetailMetric
+                label="Value Creation"
+                value={`€${selectedMetrics.valueCreation.toFixed(1)}M`}
+              />
+              <DetailMetric
+                label="Multiple Expansion"
+                value={`${selectedMetrics.multipleExpansion.toFixed(1)}x`}
+              />
               <DetailMetric label="IRR" value={`${selectedMetrics.irr.toFixed(1)}%`} />
-              <DetailMetric label="MOIC" value={`${selectedMetrics.moic.toFixed(2)}x`} />
+              <DetailMetric
+                label="MOIC"
+                value={`${selectedMetrics.moic.toFixed(2)}x`}
+              />
             </div>
           </div>
 
           <div style={{ marginTop: 20 }}>
-            <ProgressBar label="KI-Potenzial" value={Number(selectedCompany.aiScore) || 0} />
+            <ProgressBar
+              label="KI-Potenzial"
+              value={Number(selectedCompany.aiScore) || 0}
+            />
             <ProgressBar
               label="EBITDA Impact"
               value={Math.max(20, (Number(selectedCompany.aiScore) || 0) - 25)}
@@ -437,6 +520,7 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
                 <th>IRR</th>
                 <th>MOIC</th>
                 <th>Score</th>
+                <th>Peers</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -444,6 +528,7 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
             <tbody>
               {portfolio.map((company) => {
                 const metrics = calcCompany(company);
+                const peers = parsePeerTickers(company.peerTickers);
 
                 return (
                   <tr
@@ -472,6 +557,7 @@ export default function Portfolio({ portfolio = [], setPortfolio, resetPortfolio
                     <td>
                       <ScoreBar value={Number(company.score) || 0} />
                     </td>
+                    <td>{peers.length > 0 ? peers.join(", ") : "-"}</td>
                     <td>
                       <Pill type={company.status === "Exit" ? "gray" : "green"}>
                         {company.status}
