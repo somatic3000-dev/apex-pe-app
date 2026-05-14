@@ -30,11 +30,21 @@ const loadSaved = (key, fallback) => {
   }
 };
 
+const mobileNav = [
+  { id: "dashboard", label: "Home", icon: "◈" },
+  { id: "portfolio", label: "Portfolio", icon: "▣" },
+  { id: "pipeline", label: "Deals", icon: "◉" },
+  { id: "notifications", label: "Alerts", icon: "●" },
+  { id: "settings", label: "Settings", icon: "⚙" },
+];
+
 export default function App() {
   const [page, setPage] = useState("dashboard");
+
   const [portfolio, setPortfolio] = useState(() =>
     loadSaved("apex_portfolio", initialPortfolio)
   );
+
   const [deals, setDeals] = useState(() =>
     loadSaved("apex_deals", initialDeals)
   );
@@ -47,10 +57,22 @@ export default function App() {
     localStorage.setItem("apex_deals", JSON.stringify(deals));
   }, [deals]);
 
+  const resetPortfolio = () => {
+    if (confirm("Portfolio auf Beispieldaten zurücksetzen?")) {
+      setPortfolio(initialPortfolio);
+    }
+  };
+
   const pages = {
     dashboard: <Dashboard fund={initialFund} portfolio={portfolio} />,
     markt: <MarketData />,
-    portfolio: <Portfolio portfolio={portfolio} setPortfolio={setPortfolio} />,
+    portfolio: (
+      <Portfolio
+        portfolio={portfolio}
+        setPortfolio={setPortfolio}
+        resetPortfolio={resetPortfolio}
+      />
+    ),
     pipeline: <DealPipeline deals={deals} setDeals={setDeals} />,
     lbo: <LBOCalculator />,
     ai: <AIAdvisor portfolio={portfolio} deals={deals} />,
@@ -99,6 +121,30 @@ export default function App() {
       </div>
 
       <div className="main">{pages[page]}</div>
+
+      <nav className="mobile-nav">
+        {mobileNav.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setPage(item.id)}
+            style={{
+              border: "none",
+              borderRadius: 12,
+              padding: "8px 4px",
+              background:
+                page === item.id ? "rgba(201,255,59,0.16)" : "transparent",
+              color:
+                page === item.id ? "var(--accent)" : "rgba(255,255,255,0.6)",
+              fontSize: 11,
+              display: "grid",
+              gap: 3,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
