@@ -20,7 +20,8 @@ export const initialPortfolio = [
     irr: 28,
     moic: 2.4,
     status: "Active",
-    notes: "Starkes Wachstum im SaaS-Bereich.",
+    notes:
+      "Starkes Wachstum im SaaS-Bereich.",
   },
 
   {
@@ -34,7 +35,8 @@ export const initialPortfolio = [
     irr: 19,
     moic: 1.8,
     status: "Active",
-    notes: "Expansion nach Frankreich.",
+    notes:
+      "Expansion nach Frankreich.",
   },
 
   {
@@ -48,7 +50,8 @@ export const initialPortfolio = [
     irr: 14,
     moic: 1.4,
     status: "Watchlist",
-    notes: "Capex-intensives Geschäft.",
+    notes:
+      "Capex-intensives Geschäft.",
   },
 ];
 
@@ -130,38 +133,24 @@ export const NAV = [
   },
 
   {
-    id: "ic",
-    label: "IC Memo",
-    icon: "▤",
-    section: "WORKFLOW",
-  },
-
-  {
-    id: "dd",
-    label: "Due Diligence",
-    icon: "▥",
-    section: "WORKFLOW",
-  },
-
-  {
     id: "tasks",
     label: "Task Manager",
-    icon: "☑",
-    section: "WORKFLOW",
-  },
-
-  {
-    id: "search",
-    label: "Search",
-    icon: "⌕",
-    section: "SYSTEM",
+    icon: "✓",
+    section: "PORTFOLIO",
   },
 
   {
     id: "notifications",
     label: "Notifications",
-    icon: "●",
-    section: "SYSTEM",
+    icon: "⚑",
+    section: "PORTFOLIO",
+  },
+
+  {
+    id: "icmemo",
+    label: "IC Memo",
+    icon: "▤",
+    section: "ANALYSE",
   },
 
   {
@@ -181,7 +170,7 @@ export const NAV = [
   {
     id: "reporting",
     label: "LP Reporting",
-    icon: "▤",
+    icon: "▥",
     section: "REPORTING",
   },
 
