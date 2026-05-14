@@ -19,6 +19,7 @@ import DueDiligence from "./pages/DueDiligence";
 import TaskManager from "./pages/TaskManager";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import CommandBar from "./components/CommandBar";
 
 const loadSaved = (key, fallback) => {
   try {
@@ -71,9 +72,7 @@ export default function App() {
 
   function renderPage() {
     return {
-      dashboard: (
-        <Dashboard fund={fund} portfolio={portfolio} quotes={{}} />
-      ),
+      dashboard: <Dashboard fund={fund} portfolio={portfolio} quotes={{}} />,
 
       markt: (
         <MarketData
@@ -102,9 +101,7 @@ export default function App() {
 
       tasks: <TaskManager deals={deals} />,
 
-      notifications: (
-        <Notifications portfolio={portfolio} deals={deals} />
-      ),
+      notifications: <Notifications portfolio={portfolio} deals={deals} />,
 
       reporting: <Reporting portfolio={portfolio} fund={fund} />,
 
@@ -149,7 +146,10 @@ export default function App() {
         ))}
       </nav>
 
-      <main className="main">{renderPage()}</main>
+      <main className="main">
+        <CommandBar portfolio={portfolio} deals={deals} />
+        {renderPage()}
+      </main>
     </div>
   );
 }
