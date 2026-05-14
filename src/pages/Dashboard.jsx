@@ -23,6 +23,28 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
     return ebitda * multiple;
   }
 
+  function companyMargin(p) {
+    const revenue = Number(p.revenue) || 0;
+    const ebitda = Number(p.ebitda) || 0;
+    return revenue > 0 ? (ebitda / revenue) * 100 : 0;
+  }
+
+  function healthStatus(p) {
+    const irr = Number(p.irr) || 0;
+    const moic = Number(p.moic) || 0;
+    const margin = companyMargin(p);
+
+    if (irr >= 25 && moic >= 2 && margin >= 20) {
+      return { label: "Strong", color: "var(--accent)" };
+    }
+
+    if (irr >= 15 && moic >= 1.5 && margin >= 15) {
+      return { label: "On Track", color: "var(--orange)" };
+    }
+
+    return { label: "Watch", color: "var(--red)" };
+  }
+
   const portfolioValue = active.reduce((sum, p) => sum + companyValue(p), 0);
   const dryPowder = Number(fund.dryPowder) || 0;
   const dynamicAum = portfolioValue + dryPowder;
@@ -45,6 +67,8 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
   const topPerformer = [...active].sort(
     (a, b) => (Number(b.irr) || 0) - (Number(a.irr) || 0)
   )[0];
+
+  const redFlags = active.filter((p) => healthStatus(p).label === "Watch").length;
 
   const allocationData = active.map((p) => ({
     name: p.name,
@@ -83,7 +107,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
         <Metric label="MOIC" value={`${avgMoic.toFixed(2)}x`} />
         <Metric label="Revenue" value={`€${totalRevenue.toFixed(1)}m`} />
         <Metric label="EBITDA" value={`€${totalEbitda.toFixed(1)}m`} />
-        <Metric label="EBITDA Margin" value={`${ebitdaMargin.toFixed(1)}%`} />
+        <Metric label="Red Flags" value={redFlags} />
       </div>
 
       <div className="market-grid" style={{ marginBottom: 20 }}>
@@ -117,7 +141,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
           <div className="market-card-name">
             {avgIrr >= 25 ? "Top Quartile" : avgIrr >= 15 ? "On Track" : "Needs Attention"}
           </div>
-          <div className="muted">Based on average IRR and MOIC.</div>
+          <div className="muted">Based on IRR, MOIC and EBITDA margin.</div>
           <div
             className="market-card-price"
             style={{
@@ -131,6 +155,41 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
           >
             {avgIrr.toFixed(1)}%
           </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title">Portfolio Health Matrix</div>
+
+        <div className="market-grid">
+          {active.map((p) => {
+            const health = healthStatus(p);
+            const margin = companyMargin(p);
+
+            return (
+              <div className="market-card" key={p.id}>
+                <div className="market-card-name">{p.name}</div>
+                <div className="muted">{p.sector}</div>
+
+                <div
+                  style={{
+                    marginTop: 12,
+                    color: health.color,
+                    fontWeight: 800,
+                  }}
+                >
+                  {health.label}
+                </div>
+
+                <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+                  <div>IRR: {Number(p.irr || 0).toFixed(1)}%</div>
+                  <div>MOIC: {Number(p.moic || 0).toFixed(2)}x</div>
+                  <div>EBITDA Margin: {margin.toFixed(1)}%</div>
+                  <div>Value: €{companyValue(p).toFixed(1)}m</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -186,11 +245,12 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
                 <th>Sektor</th>
                 <th>Revenue</th>
                 <th>EBITDA</th>
+                <th>Margin</th>
                 <th>Multiple</th>
                 <th>Value</th>
                 <th>IRR</th>
                 <th>MOIC</th>
-                <th>Status</th>
+                <th>Health</th>
               </tr>
             </thead>
 
@@ -198,6 +258,8 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
               {portfolio.map((p) => {
                 const multiple = Number(p.currentMultiple) || Number(p.entryMultiple) || 0;
                 const value = companyValue(p);
+                const margin = companyMargin(p);
+                const health = healthStatus(p);
 
                 return (
                   <tr key={p.id}>
@@ -205,11 +267,12 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
                     <td>{p.sector}</td>
                     <td>€{Number(p.revenue || 0).toFixed(1)}m</td>
                     <td>€{Number(p.ebitda || 0).toFixed(1)}m</td>
+                    <td>{margin.toFixed(1)}%</td>
                     <td>{multiple.toFixed(1)}x</td>
                     <td>€{value.toFixed(1)}m</td>
                     <td>{Number(p.irr || 0).toFixed(1)}%</td>
                     <td>{Number(p.moic || 0).toFixed(2)}x</td>
-                    <td>{p.status}</td>
+                    <td style={{ color: health.color, fontWeight: 700 }}>{health.label}</td>
                   </tr>
                 );
               })}
