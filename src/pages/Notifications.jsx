@@ -12,6 +12,7 @@ export default function Notifications({
   const warningCount = alerts.filter((a) => a.severity === "warning").length;
   const successCount = alerts.filter((a) => a.severity === "success").length;
   const marketCount = alerts.filter((a) => a.category === "Market").length;
+  const peerCount = alerts.filter((a) => a.category === "Peer").length;
   const taskCount = alerts.filter((a) => a.category === "Task").length;
 
   return (
@@ -23,7 +24,7 @@ export default function Notifications({
           </div>
 
           <div className="page-sub">
-            Portfolio Monitoring · Market Intelligence · IC Readiness
+            Portfolio Monitoring · Peer Signals · Market Intelligence
           </div>
         </div>
       </div>
@@ -34,6 +35,7 @@ export default function Notifications({
         <Metric label="Warnings" value={warningCount} />
         <Metric label="Positive" value={successCount} />
         <Metric label="Market" value={marketCount} />
+        <Metric label="Peer Signals" value={peerCount} />
         <Metric label="Open Tasks" value={taskCount} />
       </div>
 
@@ -46,8 +48,8 @@ export default function Notifications({
           <div className="card">
             <div className="card-title">Keine Alerts aktiv</div>
             <p className="muted">
-              Aktuell sind keine kritischen Portfolio-, Markt-, Deal- oder
-              Task-Hinweise vorhanden.
+              Aktuell sind keine kritischen Portfolio-, Peer-, Markt-, Deal-
+              oder Task-Hinweise vorhanden.
             </p>
           </div>
         )}
@@ -60,11 +62,131 @@ function buildAlerts(portfolio, deals, tasks, marketContext) {
   const alerts = [];
 
   buildMarketAlerts(alerts, marketContext);
+  buildPeerAlerts(alerts, portfolio, marketContext);
   buildPortfolioAlerts(alerts, portfolio);
   buildDealAlerts(alerts, deals);
   buildTaskAlerts(alerts, tasks);
 
   return alerts.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+}
+
+function parsePeerTickers(value) {
+  if (Array.isArray(value)) {
+    return value.map((ticker) => String(ticker).trim().toUpperCase()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(",")
+    .map((ticker) => ticker.trim().toUpperCase())
+    .filter(Boolean);
+}
+
+function buildPeerAlerts(alerts, portfolio, marketContext = {}) {
+  const quotes = marketContext.quotes || {};
+
+  portfolio.forEach((company) => {
+    const peers = parsePeerTickers(company.peerTickers);
+    const peerQuotes = peers.map((ticker) => quotes[ticker]).filter(Boolean);
+
+    if (peers.length === 0) {
+      return;
+    }
+
+    if (peerQuotes.length === 0) {
+      alerts.push({
+        id: `peer-no-data-${company.id}`,
+        category: "Peer",
+        severity: "info",
+        title: "Public Peers ohne Live-Daten",
+        message: `${company.name} hat Public Peers (${peers.join(
+          ", "
+        )}), aber noch keine geladenen Marktdaten.`,
+        action: "Marktdaten öffnen und Watchlist aktualisieren",
+      });
+
+      return;
+    }
+
+    const peerAvg =
+      peerQuotes.reduce((sum, quote) => sum + (Number(quote.change) || 0), 0) /
+      peerQuotes.length;
+
+    if (peerAvg <= -3) {
+      alerts.push({
+        id: `peer-critical-${company.id}`,
+        category: "Peer",
+        severity: "critical",
+        title: "Peer Basket stark negativ",
+        message: `${company.name} Public Peers liegen im Schnitt bei ${peerAvg.toFixed(
+          2
+        )}%.`,
+        action: "Valuation Multiple, Exit Timing und Sector Read-Through prüfen",
+      });
+    } else if (peerAvg <= -1.5) {
+      alerts.push({
+        id: `peer-warning-${company.id}`,
+        category: "Peer",
+        severity: "warning",
+        title: "Peer Basket unter Druck",
+        message: `${company.name} Public Peers liegen im Schnitt bei ${peerAvg.toFixed(
+          2
+        )}%.`,
+        action: "Portfolio Review und IC Marktsektion aktualisieren",
+      });
+    } else if (peerAvg >= 3) {
+      alerts.push({
+        id: `peer-positive-${company.id}`,
+        category: "Peer",
+        severity: "success",
+        title: "Peer Basket stark positiv",
+        message: `${company.name} Public Peers liegen im Schnitt bei +${peerAvg.toFixed(
+          2
+        )}%.`,
+        action: "Exit Window und Bewertungs-Upside prüfen",
+      });
+    } else if (peerAvg >= 1.5) {
+      alerts.push({
+        id: `peer-tailwind-${company.id}`,
+        category: "Peer",
+        severity: "success",
+        title: "Positive Peer-Dynamik",
+        message: `${company.name} Public Peers liegen im Schnitt bei +${peerAvg.toFixed(
+          2
+        )}%.`,
+        action: "Markt-Rückenwind in Value Creation Review aufnehmen",
+      });
+    }
+
+    peerQuotes.forEach((quote) => {
+      const change = Number(quote.change) || 0;
+
+      if (change <= -5) {
+        alerts.push({
+          id: `company-peer-drop-${company.id}-${quote.symbol}`,
+          category: "Peer",
+          severity: "warning",
+          title: `${quote.symbol} belastet Peer Basket`,
+          message: `${quote.name || quote.symbol} fällt um ${change.toFixed(
+            2
+          )}% und ist Peer von ${company.name}.`,
+          action: "Einzeltreiber prüfen und Sektor-Signal bewerten",
+        });
+      }
+
+      if (change >= 5) {
+        alerts.push({
+          id: `company-peer-jump-${company.id}-${quote.symbol}`,
+          category: "Peer",
+          severity: "success",
+          title: `${quote.symbol} stützt Peer Basket`,
+          message: `${quote.name || quote.symbol} steigt um +${change.toFixed(
+            2
+          )}% und ist Peer von ${company.name}.`,
+          action: "Positive Marktimpulse für Bewertungsannahmen prüfen",
+        });
+      }
+    });
+  });
 }
 
 function buildMarketAlerts(alerts, marketContext = {}) {
@@ -107,9 +229,7 @@ function buildMarketAlerts(alerts, marketContext = {}) {
       category: "Market",
       severity: "warning",
       title: "Marktdruck sichtbar",
-      message: `Die Watchlist liegt im Schnitt bei ${avgChange.toFixed(
-        2
-      )}%.`,
+      message: `Die Watchlist liegt im Schnitt bei ${avgChange.toFixed(2)}%.`,
       action: "Pipeline Annahmen und Exit Timing konservativer bewerten",
     });
   } else if (avgChange >= 1) {
