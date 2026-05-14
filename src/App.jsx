@@ -25,162 +25,68 @@ import Settings from "./pages/Settings";
 const loadSaved = (key, fallback) => {
   try {
     const raw = localStorage.getItem(key);
-
-    return raw
-      ? JSON.parse(raw)
-      : fallback;
+    return raw ? JSON.parse(raw) : fallback;
   } catch {
     return fallback;
   }
 };
 
 const mobileNav = [
-  {
-    id: "dashboard",
-    label: "Home",
-    icon: "◈",
-  },
-
-  {
-    id: "portfolio",
-    label: "Portfolio",
-    icon: "▣",
-  },
-
-  {
-    id: "pipeline",
-    label: "Deals",
-    icon: "◉",
-  },
-
-  {
-    id: "notifications",
-    label: "Alerts",
-    icon: "⚑",
-  },
-
-  {
-    id: "search",
-    label: "Search",
-    icon: "⌕",
-  },
-
-  {
-    id: "settings",
-    label: "Settings",
-    icon: "⚙",
-  },
+  { id: "dashboard", label: "Home", icon: "◈" },
+  { id: "markt", label: "Market", icon: "◎" },
+  { id: "portfolio", label: "Portfolio", icon: "▣" },
+  { id: "pipeline", label: "Deals", icon: "◉" },
+  { id: "search", label: "Search", icon: "⌕" },
+  { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
 export default function App() {
-  const [page, setPage] =
-    useState("dashboard");
+  const [page, setPage] = useState("dashboard");
 
-  const [portfolio, setPortfolio] =
-    useState(() =>
-      loadSaved(
-        "apex_portfolio",
-        initialPortfolio
-      )
-    );
+  const [portfolio, setPortfolio] = useState(() =>
+    loadSaved("apex_portfolio", initialPortfolio)
+  );
 
-  const [deals, setDeals] =
-    useState(() =>
-      loadSaved(
-        "apex_deals",
-        initialDeals
-      )
-    );
+  const [deals, setDeals] = useState(() =>
+    loadSaved("apex_deals", initialDeals)
+  );
 
-  const [tasks, setTasks] =
-    useState(() =>
-      loadSaved(
-        "apex_tasks",
-        []
-      )
-    );
+  const [tasks, setTasks] = useState(() =>
+    loadSaved("apex_tasks", [])
+  );
 
   useEffect(() => {
-    localStorage.setItem(
-      "apex_portfolio",
-      JSON.stringify(portfolio)
-    );
+    localStorage.setItem("apex_portfolio", JSON.stringify(portfolio));
   }, [portfolio]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "apex_deals",
-      JSON.stringify(deals)
-    );
+    localStorage.setItem("apex_deals", JSON.stringify(deals));
   }, [deals]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "apex_tasks",
-      JSON.stringify(tasks)
-    );
+    localStorage.setItem("apex_tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  const resetPortfolio =
-    () => {
-      if (
-        confirm(
-          "Portfolio auf Beispieldaten zurücksetzen?"
-        )
-      ) {
-        setPortfolio(
-          initialPortfolio
-        );
-      }
-    };
+  const resetPortfolio = () => {
+    if (confirm("Portfolio auf Beispieldaten zurücksetzen?")) {
+      setPortfolio(initialPortfolio);
+    }
+  };
 
   const pages = {
-    dashboard: (
-      <Dashboard
-        fund={initialFund}
-        portfolio={portfolio}
-      />
-    ),
-
+    dashboard: <Dashboard fund={initialFund} portfolio={portfolio} />,
     markt: <MarketData />,
-
     portfolio: (
       <Portfolio
         portfolio={portfolio}
-        setPortfolio={
-          setPortfolio
-        }
-        resetPortfolio={
-          resetPortfolio
-        }
+        setPortfolio={setPortfolio}
+        resetPortfolio={resetPortfolio}
       />
     ),
-
-    pipeline: (
-      <DealPipeline
-        deals={deals}
-        setDeals={setDeals}
-      />
-    ),
-
-    lbo: (
-      <LBOCalculator />
-    ),
-
-    ai: (
-      <AIAdvisor
-        portfolio={portfolio}
-        deals={deals}
-      />
-    ),
-
-    reporting: (
-      <Reporting
-        fund={initialFund}
-        portfolio={portfolio}
-      />
-    ),
-
+    pipeline: <DealPipeline deals={deals} setDeals={setDeals} />,
+    lbo: <LBOCalculator />,
+    ai: <AIAdvisor portfolio={portfolio} deals={deals} />,
+    reporting: <Reporting fund={initialFund} portfolio={portfolio} />,
     tasks: (
       <TaskManager
         deals={deals}
@@ -188,7 +94,6 @@ export default function App() {
         setTasks={setTasks}
       />
     ),
-
     notifications: (
       <Notifications
         portfolio={portfolio}
@@ -196,7 +101,6 @@ export default function App() {
         tasks={tasks}
       />
     ),
-
     search: (
       <Search
         portfolio={portfolio}
@@ -204,125 +108,60 @@ export default function App() {
         tasks={tasks}
       />
     ),
-
-    icmemo: (
-      <ICMemo
-        deals={deals}
-      />
-    ),
-
-    settings: (
-      <Settings />
-    ),
+    icmemo: <ICMemo deals={deals} />,
+    settings: <Settings />,
   };
 
   return (
     <div className="app">
       <div className="topbar">
         <div className="topbar-logo">
-          APEX{" "}
-          <span>
-            CAPITAL OS
-          </span>
+          APEX <span>CAPITAL OS</span>
         </div>
 
-        <div className="badge badge-green">
-          LIVE
-        </div>
+        <div className="badge badge-green">LIVE</div>
 
         <div className="date">
-          {new Date().toLocaleDateString(
-            "de-DE"
-          )}
+          {new Date().toLocaleDateString("de-DE")}
         </div>
       </div>
 
       <div className="sidebar">
-        {NAV.map(
-          (
-            item,
-            index
-          ) => {
-            const previous =
-              NAV[index - 1];
+        {NAV.map((item, index) => {
+          const previous = NAV[index - 1];
+          const showSection = !previous || previous.section !== item.section;
 
-            const showSection =
-              !previous ||
-              previous.section !==
-                item.section;
+          return (
+            <div key={item.id}>
+              {showSection && (
+                <div className="nav-section">{item.section}</div>
+              )}
 
-            return (
               <div
-                key={item.id}
+                className={`nav-item ${page === item.id ? "active" : ""}`}
+                onClick={() => setPage(item.id)}
               >
-                {showSection && (
-                  <div className="nav-section">
-                    {
-                      item.section
-                    }
-                  </div>
-                )}
-
-                <div
-                  className={`nav-item ${
-                    page ===
-                    item.id
-                      ? "active"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setPage(
-                      item.id
-                    )
-                  }
-                >
-                  <div className="nav-icon">
-                    {
-                      item.icon
-                    }
-                  </div>
-
-                  <div>
-                    {
-                      item.label
-                    }
-                  </div>
-                </div>
+                <div className="nav-icon">{item.icon}</div>
+                <div>{item.label}</div>
               </div>
-            );
-          }
-        )}
+            </div>
+          );
+        })}
       </div>
 
-      <div className="main">
-        {pages[page]}
-      </div>
+      <div className="main">{pages[page]}</div>
 
       <nav className="mobile-nav">
-        {mobileNav.map(
-          (item) => (
-            <button
-              key={item.id}
-              className={
-                page ===
-                item.id
-                  ? "active"
-                  : ""
-              }
-              onClick={() =>
-                setPage(
-                  item.id
-                )
-              }
-            >
-              <span>
-                {item.icon}
-              </span>
-
-              {item.label}
-            </button>
-          )
-        )}
+        {mobileNav.map((item) => (
+          <button
+            key={item.id}
+            className={page === item.id ? "active" : ""}
+            onClick={() => setPage(item.id)}
+          >
+            <span>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
       </nav>
     </div>
   );
