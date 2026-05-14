@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-export default function ICMemo({ deals = [] }) {
+export default function ICMemo({ deals = [], marketContext = {} }) {
   const rankedDeals = useMemo(
     () =>
       [...deals].sort(
@@ -15,6 +15,8 @@ export default function ICMemo({ deals = [] }) {
 
   const selectedDeal =
     rankedDeals.find((deal) => deal.id === selectedId) || rankedDeals[0];
+
+  const market = evaluateMarket(marketContext);
 
   function evaluateDeal(deal) {
     const score = Number(deal?.score) || 0;
@@ -37,6 +39,14 @@ export default function ICMemo({ deals = [] }) {
     if (score < 60) risks.push("Weak IC score");
     if (!deal?.sector) risks.push("Sector not defined");
 
+    if (market.tone === "Risk-off") {
+      risks.push("Risk-off market environment");
+    }
+
+    if (market.peerSignal === "PE Peers weak") {
+      risks.push("Weak public PE peer sentiment");
+    }
+
     const upside = [];
 
     if (margin >= 20) upside.push("Strong profitability");
@@ -46,8 +56,16 @@ export default function ICMemo({ deals = [] }) {
       upside.push("Advanced pipeline stage");
     }
 
-    const thesis = generateThesis(deal, margin, score);
-    const nextSteps = generateNextSteps(recommendation);
+    if (market.tone === "Risk-on") {
+      upside.push("Supportive public market backdrop");
+    }
+
+    if (market.peerSignal === "PE Peers strong") {
+      upside.push("Positive PE peer sentiment");
+    }
+
+    const thesis = generateThesis(deal, margin, score, market);
+    const nextSteps = generateNextSteps(recommendation, market);
 
     return {
       score,
@@ -76,7 +94,7 @@ export default function ICMemo({ deals = [] }) {
           </div>
 
           <div className="page-sub">
-            Investment Committee · Thesis · Risk Review · Recommendation
+            Investment Committee · Thesis · Market Context · Recommendation
           </div>
         </div>
 
@@ -119,10 +137,18 @@ export default function ICMemo({ deals = [] }) {
               <div className="dashboard-grid" style={{ marginBottom: 20 }}>
                 <Metric label="Revenue" value={`€${memo.revenue.toFixed(1)}m`} />
                 <Metric label="EBITDA" value={`€${memo.ebitda.toFixed(1)}m`} />
-                <Metric label="EBITDA Margin" value={`${memo.margin.toFixed(1)}%`} />
+                <Metric
+                  label="EBITDA Margin"
+                  value={`${memo.margin.toFixed(1)}%`}
+                />
                 <Metric label="Entry EV" value={`€${memo.ev.toFixed(1)}m`} />
                 <Metric label="IC Score" value={`${memo.score.toFixed(0)}/100`} />
                 <Metric label="Expected IRR" value={`${memo.expectedIrr}%`} />
+                <Metric label="Market" value={market.tone} />
+                <Metric
+                  label="Watchlist Ø"
+                  value={`${market.avgChange.toFixed(2)}%`}
+                />
               </div>
 
               <div className="card" style={{ marginBottom: 20 }}>
@@ -162,14 +188,35 @@ export default function ICMemo({ deals = [] }) {
                       <strong style={{ color: recommendationColor(memo.recommendation) }}>
                         {memo.recommendation}
                       </strong>
-                      . Die Empfehlung basiert auf Score, Profitabilität,
-                      Pipeline-Stage und Bewertungsniveau.
+                      . Die Empfehlung berücksichtigt Score, Profitabilität,
+                      Pipeline-Stage, Bewertungsniveau und Marktumfeld.
                     </p>
                   </Section>
                 </div>
               </div>
 
               <div className="market-grid" style={{ marginBottom: 20 }}>
+                <Section title="Market Environment">
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <MemoRow label="Market Tone" value={market.tone} />
+                    <MemoRow
+                      label="Watchlist Avg."
+                      value={`${market.avgChange.toFixed(2)}%`}
+                    />
+                    <MemoRow label="Gainers" value={market.gainers} />
+                    <MemoRow label="Losers" value={market.losers} />
+                    <MemoRow label="PE Peer Signal" value={market.peerSignal} />
+                    <MemoRow
+                      label="PE Peer Avg."
+                      value={`${market.peerAvgChange.toFixed(2)}%`}
+                    />
+                  </div>
+
+                  <p className="muted" style={{ lineHeight: 1.7, marginTop: 14 }}>
+                    {market.readThrough}
+                  </p>
+                </Section>
+
                 <Section title="Upside">
                   {memo.upside.length > 0 ? (
                     <List items={memo.upside} color="var(--accent)" prefix="+" />
@@ -197,8 +244,14 @@ export default function ICMemo({ deals = [] }) {
                 <div style={{ display: "grid", gap: 12 }}>
                   <MemoRow label="Revenue" value={`€${memo.revenue.toFixed(1)}m`} />
                   <MemoRow label="EBITDA" value={`€${memo.ebitda.toFixed(1)}m`} />
-                  <MemoRow label="EBITDA Margin" value={`${memo.margin.toFixed(1)}%`} />
-                  <MemoRow label="Entry Multiple" value={`${memo.multiple.toFixed(1)}x`} />
+                  <MemoRow
+                    label="EBITDA Margin"
+                    value={`${memo.margin.toFixed(1)}%`}
+                  />
+                  <MemoRow
+                    label="Entry Multiple"
+                    value={`${memo.multiple.toFixed(1)}x`}
+                  />
                   <MemoRow label="Enterprise Value" value={`€${memo.ev.toFixed(1)}m`} />
                   <MemoRow label="Pipeline Stage" value={selectedDeal.status} />
                   <MemoRow label="Priority" value={selectedDeal.priority} />
@@ -213,26 +266,86 @@ export default function ICMemo({ deals = [] }) {
   );
 }
 
-function generateThesis(deal, margin, score) {
+function evaluateMarket(marketContext = {}) {
+  const summary = marketContext.summary || {};
+  const quotes = marketContext.quotes || {};
+
+  const avgChange = Number(summary.avgChange) || 0;
+  const gainers = Number(summary.gainers) || 0;
+  const losers = Number(summary.losers) || 0;
+
+  const tone =
+    avgChange >= 1 ? "Risk-on" : avgChange <= -1 ? "Risk-off" : "Neutral";
+
+  const pePeers = ["BX", "KKR", "APO", "CG"];
+  const peerQuotes = pePeers.map((symbol) => quotes[symbol]).filter(Boolean);
+
+  const peerAvgChange =
+    peerQuotes.length > 0
+      ? peerQuotes.reduce((sum, quote) => sum + (Number(quote.change) || 0), 0) /
+        peerQuotes.length
+      : 0;
+
+  const peerSignal =
+    peerAvgChange >= 1
+      ? "PE Peers strong"
+      : peerAvgChange <= -1
+      ? "PE Peers weak"
+      : "PE Peers stable";
+
+  const readThrough =
+    tone === "Risk-on"
+      ? "Public markets are supportive. This can improve exit timing, confidence in growth assumptions and appetite for higher-quality assets."
+      : tone === "Risk-off"
+      ? "Market conditions are pressured. IC should apply stronger valuation discipline, downside protection and more conservative exit assumptions."
+      : "Market conditions are mixed. IC should focus on company-specific performance, diligence quality and valuation sensitivity.";
+
+  return {
+    avgChange,
+    gainers,
+    losers,
+    tone,
+    peerAvgChange,
+    peerSignal,
+    readThrough,
+  };
+}
+
+function generateThesis(deal, margin, score, market) {
   const name = deal?.name || "The target";
   const sector = deal?.sector || "its sector";
 
+  const marketSentence =
+    market.tone === "Risk-on"
+      ? "The current market backdrop is supportive for risk assets and may improve exit optionality."
+      : market.tone === "Risk-off"
+      ? "The current market backdrop is more cautious, requiring stronger downside protection and valuation discipline."
+      : "The current market backdrop is mixed, so the investment case should rely primarily on company-specific fundamentals.";
+
   if (score >= 80 && margin >= 20) {
-    return `${name} represents a high-conviction investment opportunity in ${sector}, supported by strong profitability, attractive IC scoring and a mature pipeline position. The case should be advanced toward IC approval subject to final commercial, financial and legal due diligence.`;
+    return `${name} represents a high-conviction investment opportunity in ${sector}, supported by strong profitability, attractive IC scoring and a mature pipeline position. ${marketSentence}`;
   }
 
   if (score >= 65) {
-    return `${name} shows a credible investment case in ${sector}, but requires additional validation before final approval. Key focus areas should include margin quality, valuation discipline, revenue durability and management execution capability.`;
+    return `${name} shows a credible investment case in ${sector}, but requires additional validation before final approval. Key focus areas should include margin quality, valuation discipline, revenue durability and management execution capability. ${marketSentence}`;
   }
 
-  return `${name} currently does not meet the required IC threshold. The opportunity should remain under review only if strategic relevance, valuation or operating performance improves materially.`;
+  return `${name} currently does not meet the required IC threshold. The opportunity should remain under review only if strategic relevance, valuation or operating performance improves materially. ${marketSentence}`;
 }
 
-function generateNextSteps(recommendation) {
+function generateNextSteps(recommendation, market) {
+  const marketStep =
+    market.tone === "Risk-off"
+      ? "Run downside case with lower exit multiple and delayed exit timing"
+      : market.tone === "Risk-on"
+      ? "Review upside case and exit readiness assumptions"
+      : "Validate base case sensitivity against current market conditions";
+
   if (recommendation === "INVEST") {
     return [
       "Finalize IC memo and investment thesis",
       "Confirm valuation and debt capacity",
+      marketStep,
       "Complete confirmatory due diligence",
       "Prepare final investment committee approval",
     ];
@@ -243,12 +356,14 @@ function generateNextSteps(recommendation) {
       "Deep-dive commercial due diligence",
       "Validate EBITDA quality and margin sustainability",
       "Review valuation sensitivity",
+      marketStep,
       "Update deal score after diligence findings",
     ];
   }
 
   return [
     "Document rejection rationale",
+    marketStep,
     "Monitor for valuation reset or improved KPIs",
     "Keep relationship warm only if strategically relevant",
   ];
