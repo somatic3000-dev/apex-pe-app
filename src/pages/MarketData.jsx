@@ -26,7 +26,7 @@ function normalizeWatchlist(items = []) {
   });
 }
 
-export default function MarketData() {
+export default function MarketData({ onMarketUpdate }) {
   const defaultSymbols = useMemo(() => normalizeWatchlist(WATCH_SYMBOLS), []);
 
   const [symbols, setSymbols] = useState(() => {
@@ -62,6 +62,36 @@ export default function MarketData() {
     }
   }, [apiKey, symbols]);
 
+  const marketSummary = useMemo(() => {
+    const availableQuotes = Object.values(quotes).filter(Boolean);
+
+    const gainers = availableQuotes.filter((quote) => quote.change > 0).length;
+    const losers = availableQuotes.filter((quote) => quote.change < 0).length;
+
+    const avgChange =
+      availableQuotes.length > 0
+        ? availableQuotes.reduce((sum, quote) => sum + quote.change, 0) /
+          availableQuotes.length
+        : 0;
+
+    return {
+      loaded: availableQuotes.length,
+      gainers,
+      losers,
+      avgChange,
+    };
+  }, [quotes]);
+
+  useEffect(() => {
+    if (typeof onMarketUpdate === "function") {
+      onMarketUpdate({
+        quotes,
+        summary: marketSummary,
+        lastUpdated,
+      });
+    }
+  }, [quotes, marketSummary, lastUpdated, onMarketUpdate]);
+
   async function refreshQuotes() {
     if (!apiKey) return;
 
@@ -79,6 +109,9 @@ export default function MarketData() {
 
         if (data && Number(data.c) > 0) {
           next[item.sym] = {
+            symbol: item.sym,
+            name: item.name,
+            relevance: item.relevance,
             price: Number(data.c) || 0,
             change: Number(data.dp) || 0,
             high: Number(data.h) || 0,
@@ -95,7 +128,7 @@ export default function MarketData() {
     }
 
     setQuotes(next);
-    setLastUpdated(new Date());
+    setLastUpdated(new Date().toISOString());
     setLoading(false);
   }
 
@@ -133,26 +166,6 @@ export default function MarketData() {
     setSymbols(defaultSymbols);
     localStorage.removeItem(STORAGE_KEY);
   }
-
-  const marketSummary = useMemo(() => {
-    const availableQuotes = Object.values(quotes).filter(Boolean);
-
-    const gainers = availableQuotes.filter((quote) => quote.change > 0).length;
-    const losers = availableQuotes.filter((quote) => quote.change < 0).length;
-
-    const avgChange =
-      availableQuotes.length > 0
-        ? availableQuotes.reduce((sum, quote) => sum + quote.change, 0) /
-          availableQuotes.length
-        : 0;
-
-    return {
-      loaded: availableQuotes.length,
-      gainers,
-      losers,
-      avgChange,
-    };
-  }, [quotes]);
 
   return (
     <div className="fade-in">
@@ -236,7 +249,7 @@ export default function MarketData() {
 
         {lastUpdated && (
           <div className="muted" style={{ marginTop: 10 }}>
-            Letztes Update: {lastUpdated.toLocaleString("de-DE")}
+            Letztes Update: {new Date(lastUpdated).toLocaleString("de-DE")}
           </div>
         )}
       </div>
