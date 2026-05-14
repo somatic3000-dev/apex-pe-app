@@ -137,12 +137,12 @@ export default function MarketData() {
   const marketSummary = useMemo(() => {
     const availableQuotes = Object.values(quotes).filter(Boolean);
 
-    const gainers = availableQuotes.filter((q) => q.change > 0).length;
-    const losers = availableQuotes.filter((q) => q.change < 0).length;
+    const gainers = availableQuotes.filter((quote) => quote.change > 0).length;
+    const losers = availableQuotes.filter((quote) => quote.change < 0).length;
 
     const avgChange =
       availableQuotes.length > 0
-        ? availableQuotes.reduce((sum, q) => sum + q.change, 0) /
+        ? availableQuotes.reduce((sum, quote) => sum + quote.change, 0) /
           availableQuotes.length
         : 0;
 
