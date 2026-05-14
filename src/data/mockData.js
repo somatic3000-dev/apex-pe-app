@@ -15,43 +15,53 @@ export const initialPortfolio = [
     sector: "Software",
     revenue: 42,
     ebitda: 11,
+    equity: 35,
     entryMultiple: 8,
     currentMultiple: 11,
     irr: 28,
     moic: 2.4,
+    score: 82,
+    aiScore: 78,
+    entry: 2022,
+    stage: "Scale",
     status: "Active",
-    notes:
-      "Starkes Wachstum im SaaS-Bereich.",
+    notes: "Starkes Wachstum im SaaS-Bereich.",
   },
-
   {
     id: 2,
     name: "MedTech Labs",
     sector: "Healthcare",
     revenue: 31,
     ebitda: 7,
+    equity: 28,
     entryMultiple: 9,
     currentMultiple: 10,
     irr: 19,
     moic: 1.8,
+    score: 71,
+    aiScore: 66,
+    entry: 2022,
+    stage: "Optimize",
     status: "Active",
-    notes:
-      "Expansion nach Frankreich.",
+    notes: "Expansion nach Frankreich.",
   },
-
   {
     id: 3,
     name: "Green Energy GmbH",
     sector: "Energy",
     revenue: 55,
     ebitda: 13,
+    equity: 40,
     entryMultiple: 7,
     currentMultiple: 8,
     irr: 14,
     moic: 1.4,
+    score: 58,
+    aiScore: 54,
+    entry: 2023,
+    stage: "Hold",
     status: "Watchlist",
-    notes:
-      "Capex-intensives Geschäft.",
+    notes: "Capex-intensives Geschäft.",
   },
 ];
 
@@ -67,7 +77,6 @@ export const initialDeals = [
     priority: "High",
     score: 82,
   },
-
   {
     id: 2,
     name: "CloudBase",
@@ -79,7 +88,6 @@ export const initialDeals = [
     priority: "Medium",
     score: 68,
   },
-
   {
     id: 3,
     name: "Industrial Systems",
@@ -110,70 +118,66 @@ export const NAV = [
     icon: "◈",
     section: "ÜBERSICHT",
   },
-
   {
     id: "markt",
     label: "Marktdaten",
     icon: "◎",
     section: "ÜBERSICHT",
   },
-
   {
     id: "portfolio",
     label: "Portfolio",
     icon: "▣",
     section: "PORTFOLIO",
   },
-
   {
     id: "pipeline",
     label: "Deal Pipeline",
     icon: "◉",
     section: "PORTFOLIO",
   },
-
   {
     id: "tasks",
     label: "Task Manager",
     icon: "✓",
     section: "PORTFOLIO",
   },
-
   {
     id: "notifications",
     label: "Notifications",
     icon: "⚑",
     section: "PORTFOLIO",
   },
-
+  {
+    id: "search",
+    label: "Search",
+    icon: "⌕",
+    section: "SYSTEM",
+  },
   {
     id: "icmemo",
     label: "IC Memo",
     icon: "▤",
     section: "ANALYSE",
   },
-
   {
     id: "lbo",
     label: "LBO Rechner",
     icon: "∑",
     section: "ANALYSE",
   },
-
   {
     id: "ai",
     label: "KI Berater",
     icon: "◆",
     section: "ANALYSE",
   },
-
   {
     id: "reporting",
     label: "LP Reporting",
     icon: "▥",
     section: "REPORTING",
   },
-
   {
     id: "settings",
     label: "Settings",
