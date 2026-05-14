@@ -42,6 +42,10 @@ export default function App() {
     loadSaved("apex_deals", initialDeals)
   );
 
+  const [tasks, setTasks] = useState(() =>
+    loadSaved("apex_tasks", [])
+  );
+
   const [finnhubKey, setFinnhubKey] = useState(
     () => localStorage.getItem("apex_finnhub_key") || ""
   );
@@ -53,6 +57,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("apex_deals", JSON.stringify(deals));
   }, [deals]);
+
+  useEffect(() => {
+    localStorage.setItem("apex_tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
   useEffect(() => {
     localStorage.setItem("apex_finnhub_key", finnhubKey);
@@ -99,9 +107,21 @@ export default function App() {
 
       dd: <DueDiligence deals={deals} />,
 
-      tasks: <TaskManager deals={deals} />,
+      tasks: (
+        <TaskManager
+          deals={deals}
+          tasks={tasks}
+          setTasks={setTasks}
+        />
+      ),
 
-      notifications: <Notifications portfolio={portfolio} deals={deals} />,
+      notifications: (
+        <Notifications
+          portfolio={portfolio}
+          deals={deals}
+          tasks={tasks}
+        />
+      ),
 
       reporting: <Reporting portfolio={portfolio} fund={fund} />,
 
@@ -147,7 +167,7 @@ export default function App() {
       </nav>
 
       <main className="main">
-        <CommandBar portfolio={portfolio} deals={deals} />
+        <CommandBar portfolio={portfolio} deals={deals} tasks={tasks} />
         {renderPage()}
       </main>
     </div>
