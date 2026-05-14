@@ -1,4 +1,9 @@
-export default function CommandBar({ portfolio = [], deals = [], tasks = [] }) {
+export default function CommandBar({
+  portfolio = [],
+  deals = [],
+  tasks = [],
+  setPage,
+}) {
   const activeCompanies = portfolio.filter((p) => p.status === "Active").length;
 
   const avgIrr =
@@ -14,7 +19,6 @@ export default function CommandBar({ portfolio = [], deals = [], tasks = [] }) {
   ).length;
 
   const openTasks = tasks.filter((t) => t.status !== "Done").length;
-
   const alerts = portfolio.filter((p) => Number(p.irr) < 15).length;
 
   const health =
@@ -52,8 +56,24 @@ export default function CommandBar({ portfolio = [], deals = [], tasks = [] }) {
           <CommandMetric label="AVG IRR" value={`${avgIrr.toFixed(1)}%`} />
         </div>
 
-        <div style={{ color: healthColor, fontWeight: 700, fontSize: 13 }}>
-          {health}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPage("search")}
+          >
+            SEARCH
+          </button>
+
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPage("notifications")}
+          >
+            ALERTS
+          </button>
+
+          <div style={{ color: healthColor, fontWeight: 700, fontSize: 13 }}>
+            {health}
+          </div>
         </div>
       </div>
     </div>
