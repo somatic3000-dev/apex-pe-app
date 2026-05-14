@@ -6,6 +6,8 @@ import { WATCH_SYMBOLS } from "../data/mockData";
 const STORAGE_KEY = "apex_market_watchlist";
 const API_KEY_STORAGE = "apex_finnhub_key";
 
+const ENV_FINNHUB_KEY = import.meta.env.VITE_FINNHUB_KEY || "";
+
 function normalizeWatchlist(items = []) {
   return items.map((item) => {
     if (typeof item === "string") {
@@ -33,10 +35,15 @@ export default function MarketData() {
   });
 
   const [ticker, setTicker] = useState("");
-  const [apiKey, setApiKey] = useState(
+
+  const [manualApiKey, setManualApiKey] = useState(
     () => localStorage.getItem(API_KEY_STORAGE) || ""
   );
-  const [tempKey, setTempKey] = useState(apiKey);
+
+  const [tempKey, setTempKey] = useState(manualApiKey);
+
+  const apiKey = ENV_FINNHUB_KEY || manualApiKey;
+
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -46,8 +53,8 @@ export default function MarketData() {
   }, [symbols]);
 
   useEffect(() => {
-    localStorage.setItem(API_KEY_STORAGE, apiKey);
-  }, [apiKey]);
+    localStorage.setItem(API_KEY_STORAGE, manualApiKey);
+  }, [manualApiKey]);
 
   useEffect(() => {
     if (apiKey && symbols.length > 0) {
@@ -92,8 +99,8 @@ export default function MarketData() {
     setLoading(false);
   }
 
-  function saveApiKey() {
-    setApiKey(tempKey.trim());
+  function saveManualApiKey() {
+    setManualApiKey(tempKey.trim());
   }
 
   function addSymbol() {
@@ -174,33 +181,37 @@ export default function MarketData() {
         <Metric label="Loaded" value={marketSummary.loaded} />
         <Metric label="Gainers" value={marketSummary.gainers} />
         <Metric label="Losers" value={marketSummary.losers} />
-        <Metric
-          label="Ø Change"
-          value={`${marketSummary.avgChange.toFixed(2)}%`}
-        />
+        <Metric label="Ø Change" value={`${marketSummary.avgChange.toFixed(2)}%`} />
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-title">Finnhub API-Key</div>
 
-        <div className="market-grid">
-          <input
-            className="input"
-            value={tempKey}
-            onChange={(event) => setTempKey(event.target.value)}
-            placeholder="Finnhub API-Key"
-          />
+        {ENV_FINNHUB_KEY ? (
+          <div className="muted">
+            API-Key wird über Vercel Environment Variable geladen.
+          </div>
+        ) : (
+          <>
+            <div className="market-grid">
+              <input
+                className="input"
+                value={tempKey}
+                onChange={(event) => setTempKey(event.target.value)}
+                placeholder="Finnhub API-Key"
+              />
 
-          <button className="btn btn-primary" onClick={saveApiKey}>
-            SPEICHERN
-          </button>
-        </div>
+              <button className="btn btn-primary" onClick={saveManualApiKey}>
+                SPEICHERN
+              </button>
+            </div>
 
-        <div className="muted" style={{ marginTop: 10 }}>
-          {apiKey
-            ? "API-Key gespeichert. Daten werden lokal im Browser gespeichert."
-            : "Kostenlosen Finnhub API-Key einfügen, um Live-Kurse zu laden."}
-        </div>
+            <div className="muted" style={{ marginTop: 10 }}>
+              Kein Vercel API-Key gefunden. Du kannst temporär hier einen lokalen
+              Key speichern.
+            </div>
+          </>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
@@ -265,13 +276,7 @@ export default function MarketData() {
                     {quote.change.toFixed(2)}%
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 6,
-                      marginTop: 14,
-                    }}
-                  >
+                  <div style={{ display: "grid", gap: 6, marginTop: 14 }}>
                     <InfoRow label="Open" value={`$${quote.open.toFixed(2)}`} />
                     <InfoRow label="High" value={`$${quote.high.toFixed(2)}`} />
                     <InfoRow label="Low" value={`$${quote.low.toFixed(2)}`} />
@@ -304,13 +309,7 @@ export default function MarketData() {
 
 function InfoRow({ label, value }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: 12,
-      }}
-    >
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
       <span className="muted">{label}</span>
       <strong>{value}</strong>
     </div>
