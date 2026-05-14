@@ -19,6 +19,7 @@ import Reporting from "./pages/Reporting";
 import ICMemo from "./pages/ICMemo";
 import TaskManager from "./pages/TaskManager";
 import Notifications from "./pages/Notifications";
+import Search from "./pages/Search";
 import Settings from "./pages/Settings";
 
 const loadSaved = (key, fallback) => {
@@ -34,7 +35,7 @@ const mobileNav = [
   { id: "dashboard", label: "Home", icon: "◈" },
   { id: "portfolio", label: "Portfolio", icon: "▣" },
   { id: "pipeline", label: "Deals", icon: "◉" },
-  { id: "notifications", label: "Alerts", icon: "●" },
+  { id: "search", label: "Search", icon: "⌕" },
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
@@ -49,6 +50,10 @@ export default function App() {
     loadSaved("apex_deals", initialDeals)
   );
 
+  const [tasks, setTasks] = useState(() =>
+    loadSaved("apex_tasks", [])
+  );
+
   useEffect(() => {
     localStorage.setItem("apex_portfolio", JSON.stringify(portfolio));
   }, [portfolio]);
@@ -56,6 +61,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("apex_deals", JSON.stringify(deals));
   }, [deals]);
+
+  useEffect(() => {
+    localStorage.setItem("apex_tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
   const resetPortfolio = () => {
     if (confirm("Portfolio auf Beispieldaten zurücksetzen?")) {
@@ -77,8 +86,27 @@ export default function App() {
     lbo: <LBOCalculator />,
     ai: <AIAdvisor portfolio={portfolio} deals={deals} />,
     reporting: <Reporting fund={initialFund} portfolio={portfolio} />,
-    tasks: <TaskManager deals={deals} />,
-    notifications: <Notifications portfolio={portfolio} deals={deals} />,
+    tasks: (
+      <TaskManager
+        deals={deals}
+        tasks={tasks}
+        setTasks={setTasks}
+      />
+    ),
+    notifications: (
+      <Notifications
+        portfolio={portfolio}
+        deals={deals}
+        tasks={tasks}
+      />
+    ),
+    search: (
+      <Search
+        portfolio={portfolio}
+        deals={deals}
+        tasks={tasks}
+      />
+    ),
     icmemo: <ICMemo deals={deals} />,
     settings: <Settings />,
   };
@@ -126,21 +154,10 @@ export default function App() {
         {mobileNav.map((item) => (
           <button
             key={item.id}
+            className={page === item.id ? "active" : ""}
             onClick={() => setPage(item.id)}
-            style={{
-              border: "none",
-              borderRadius: 12,
-              padding: "8px 4px",
-              background:
-                page === item.id ? "rgba(201,255,59,0.16)" : "transparent",
-              color:
-                page === item.id ? "var(--accent)" : "rgba(255,255,255,0.6)",
-              fontSize: 11,
-              display: "grid",
-              gap: 3,
-            }}
           >
-            <span style={{ fontSize: 16 }}>{item.icon}</span>
+            <span>{item.icon}</span>
             {item.label}
           </button>
         ))}
