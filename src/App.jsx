@@ -1,5 +1,3 @@
-// src/App.jsx
-
 import { useEffect, useState } from "react";
 
 import {
@@ -19,6 +17,7 @@ import Reporting from "./pages/Reporting";
 import ICMemo from "./pages/ICMemo";
 import DueDiligence from "./pages/DueDiligence";
 import TaskManager from "./pages/TaskManager";
+import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 
 const loadSaved = (key, fallback) => {
@@ -65,10 +64,7 @@ export default function App() {
   };
 
   const sections = NAV.reduce((acc, item) => {
-    if (!acc[item.section]) {
-      acc[item.section] = [];
-    }
-
+    if (!acc[item.section]) acc[item.section] = [];
     acc[item.section].push(item);
     return acc;
   }, {});
@@ -76,11 +72,7 @@ export default function App() {
   function renderPage() {
     return {
       dashboard: (
-        <Dashboard
-          fund={fund}
-          portfolio={portfolio}
-          quotes={{}}
-        />
+        <Dashboard fund={fund} portfolio={portfolio} quotes={{}} />
       ),
 
       markt: (
@@ -98,21 +90,11 @@ export default function App() {
         />
       ),
 
-      pipeline: (
-        <DealPipeline
-          deals={deals}
-          setDeals={setDeals}
-        />
-      ),
+      pipeline: <DealPipeline deals={deals} setDeals={setDeals} />,
 
       lbo: <LBOCalculator />,
 
-      ai: (
-        <AIAdvisor
-          portfolio={portfolio}
-          deals={deals}
-        />
-      ),
+      ai: <AIAdvisor portfolio={portfolio} deals={deals} />,
 
       ic: <ICMemo deals={deals} />,
 
@@ -120,12 +102,11 @@ export default function App() {
 
       tasks: <TaskManager deals={deals} />,
 
-      reporting: (
-        <Reporting
-          portfolio={portfolio}
-          fund={fund}
-        />
+      notifications: (
+        <Notifications portfolio={portfolio} deals={deals} />
       ),
+
+      reporting: <Reporting portfolio={portfolio} fund={fund} />,
 
       settings: <Settings />,
     }[page];
