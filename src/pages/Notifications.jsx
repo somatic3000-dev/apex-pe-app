@@ -4,12 +4,14 @@ export default function Notifications({
   portfolio = [],
   deals = [],
   tasks = [],
+  marketContext = {},
 }) {
-  const alerts = buildAlerts(portfolio, deals, tasks);
+  const alerts = buildAlerts(portfolio, deals, tasks, marketContext);
 
   const criticalCount = alerts.filter((a) => a.severity === "critical").length;
   const warningCount = alerts.filter((a) => a.severity === "warning").length;
   const successCount = alerts.filter((a) => a.severity === "success").length;
+  const marketCount = alerts.filter((a) => a.category === "Market").length;
   const taskCount = alerts.filter((a) => a.category === "Task").length;
 
   return (
@@ -21,7 +23,7 @@ export default function Notifications({
           </div>
 
           <div className="page-sub">
-            Portfolio Monitoring · IC Readiness · Task Follow-up
+            Portfolio Monitoring · Market Intelligence · IC Readiness
           </div>
         </div>
       </div>
@@ -31,6 +33,7 @@ export default function Notifications({
         <Metric label="Critical" value={criticalCount} />
         <Metric label="Warnings" value={warningCount} />
         <Metric label="Positive" value={successCount} />
+        <Metric label="Market" value={marketCount} />
         <Metric label="Open Tasks" value={taskCount} />
       </div>
 
@@ -43,8 +46,8 @@ export default function Notifications({
           <div className="card">
             <div className="card-title">Keine Alerts aktiv</div>
             <p className="muted">
-              Aktuell sind keine kritischen Portfolio-, Deal- oder Task-Hinweise
-              vorhanden.
+              Aktuell sind keine kritischen Portfolio-, Markt-, Deal- oder
+              Task-Hinweise vorhanden.
             </p>
           </div>
         )}
@@ -53,9 +56,140 @@ export default function Notifications({
   );
 }
 
-function buildAlerts(portfolio, deals, tasks) {
+function buildAlerts(portfolio, deals, tasks, marketContext) {
   const alerts = [];
 
+  buildMarketAlerts(alerts, marketContext);
+  buildPortfolioAlerts(alerts, portfolio);
+  buildDealAlerts(alerts, deals);
+  buildTaskAlerts(alerts, tasks);
+
+  return alerts.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
+}
+
+function buildMarketAlerts(alerts, marketContext = {}) {
+  const summary = marketContext.summary || {};
+  const quotes = marketContext.quotes || {};
+
+  const loaded = Number(summary.loaded) || 0;
+  const avgChange = Number(summary.avgChange) || 0;
+  const gainers = Number(summary.gainers) || 0;
+  const losers = Number(summary.losers) || 0;
+
+  if (loaded === 0) {
+    alerts.push({
+      id: "market-no-data",
+      category: "Market",
+      severity: "info",
+      title: "Keine Marktdaten geladen",
+      message:
+        "Es wurden noch keine Live-Marktdaten geladen. Öffne Marktdaten und klicke Refresh.",
+      action: "Finnhub Key prüfen und Watchlist aktualisieren",
+    });
+
+    return;
+  }
+
+  if (avgChange <= -2) {
+    alerts.push({
+      id: "market-risk-off",
+      category: "Market",
+      severity: "critical",
+      title: "Risk-off Marktumfeld",
+      message: `Die Watchlist liegt im Schnitt bei ${avgChange.toFixed(
+        2
+      )}%. ${losers} Titel sind negativ.`,
+      action: "Valuation Discipline erhöhen und Downside Cases prüfen",
+    });
+  } else if (avgChange <= -1) {
+    alerts.push({
+      id: "market-pressure",
+      category: "Market",
+      severity: "warning",
+      title: "Marktdruck sichtbar",
+      message: `Die Watchlist liegt im Schnitt bei ${avgChange.toFixed(
+        2
+      )}%.`,
+      action: "Pipeline Annahmen und Exit Timing konservativer bewerten",
+    });
+  } else if (avgChange >= 1) {
+    alerts.push({
+      id: "market-tailwind",
+      category: "Market",
+      severity: "success",
+      title: "Positive Marktstimmung",
+      message: `Die Watchlist liegt im Schnitt bei +${avgChange.toFixed(
+        2
+      )}%. ${gainers} Titel sind positiv.`,
+      action: "Exit Readiness und High-Conviction Deals priorisieren",
+    });
+  }
+
+  const pePeers = ["BX", "KKR", "APO", "CG"];
+  const peerQuotes = pePeers.map((symbol) => quotes[symbol]).filter(Boolean);
+
+  if (peerQuotes.length > 0) {
+    const peerAvg =
+      peerQuotes.reduce((sum, quote) => sum + (Number(quote.change) || 0), 0) /
+      peerQuotes.length;
+
+    if (peerAvg <= -2) {
+      alerts.push({
+        id: "pe-peer-weak",
+        category: "Market",
+        severity: "warning",
+        title: "PE Peers schwach",
+        message: `BX, KKR, APO und CG liegen im Schnitt bei ${peerAvg.toFixed(
+          2
+        )}%.`,
+        action: "Public PE Sentiment in IC Memos berücksichtigen",
+      });
+    }
+
+    if (peerAvg >= 2) {
+      alerts.push({
+        id: "pe-peer-strong",
+        category: "Market",
+        severity: "success",
+        title: "PE Peers stark",
+        message: `BX, KKR, APO und CG liegen im Schnitt bei +${peerAvg.toFixed(
+          2
+        )}%.`,
+        action: "Exit Window und Fundraising-Sentiment prüfen",
+      });
+    }
+  }
+
+  Object.values(quotes)
+    .filter(Boolean)
+    .forEach((quote) => {
+      const change = Number(quote.change) || 0;
+
+      if (change <= -5) {
+        alerts.push({
+          id: `ticker-drop-${quote.symbol}`,
+          category: "Market",
+          severity: "critical",
+          title: `${quote.symbol} stark negativ`,
+          message: `${quote.name || quote.symbol} fällt um ${change.toFixed(2)}%.`,
+          action: "Sektor- und Peer-Read-Through prüfen",
+        });
+      }
+
+      if (change >= 5) {
+        alerts.push({
+          id: `ticker-jump-${quote.symbol}`,
+          category: "Market",
+          severity: "success",
+          title: `${quote.symbol} stark positiv`,
+          message: `${quote.name || quote.symbol} steigt um +${change.toFixed(2)}%.`,
+          action: "Positive Marktimpulse für Vergleichsunternehmen prüfen",
+        });
+      }
+    });
+}
+
+function buildPortfolioAlerts(alerts, portfolio) {
   portfolio.forEach((company) => {
     const revenue = Number(company.revenue) || 0;
     const ebitda = Number(company.ebitda) || 0;
@@ -96,7 +230,9 @@ function buildAlerts(portfolio, deals, tasks) {
       });
     }
   });
+}
 
+function buildDealAlerts(alerts, deals) {
   deals.forEach((deal) => {
     const score = Number(deal.score) || 0;
 
@@ -122,7 +258,9 @@ function buildAlerts(portfolio, deals, tasks) {
       });
     }
   });
+}
 
+function buildTaskAlerts(alerts, tasks) {
   tasks.forEach((task) => {
     if (task.status !== "Done") {
       alerts.push({
@@ -131,12 +269,12 @@ function buildAlerts(portfolio, deals, tasks) {
         severity: task.priority === "High" ? "critical" : "info",
         title: "Offene Aufgabe",
         message: `${task.title} · ${task.owner || "No owner"}`,
-        action: task.deadline ? `Deadline: ${task.deadline}` : "Owner / Deadline prüfen",
+        action: task.deadline
+          ? `Deadline: ${task.deadline}`
+          : "Owner / Deadline prüfen",
       });
     }
   });
-
-  return alerts.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
 }
 
 function severityRank(severity) {
