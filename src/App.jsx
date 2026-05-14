@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import { useEffect, useState } from "react";
 
 import {
@@ -23,40 +25,69 @@ import Settings from "./pages/Settings";
 
 import CommandBar from "./components/CommandBar";
 
-const loadSaved = (key, fallback) => {
+const loadSaved = (
+  key,
+  fallback
+) => {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    const raw =
+      localStorage.getItem(key);
+
+    return raw
+      ? JSON.parse(raw)
+      : fallback;
   } catch {
     return fallback;
   }
 };
 
 export default function App() {
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] =
+    useState("dashboard");
 
-  const [fund] = useState(initialFund);
+  const [fund] =
+    useState(initialFund);
 
-  const [portfolio, setPortfolio] = useState(() =>
-    loadSaved("apex_portfolio", initialPortfolio)
-  );
+  const [portfolio, setPortfolio] =
+    useState(() =>
+      loadSaved(
+        "apex_portfolio",
+        initialPortfolio
+      )
+    );
 
-  const [deals, setDeals] = useState(() =>
-    loadSaved("apex_deals", initialDeals)
-  );
+  const [deals, setDeals] =
+    useState(() =>
+      loadSaved(
+        "apex_deals",
+        initialDeals
+      )
+    );
 
-  const [tasks, setTasks] = useState(() =>
-    loadSaved("apex_tasks", [])
-  );
+  const [tasks, setTasks] =
+    useState(() =>
+      loadSaved(
+        "apex_tasks",
+        []
+      )
+    );
 
-  const [finnhubKey, setFinnhubKey] = useState(
-    () => localStorage.getItem("apex_finnhub_key") || ""
+  const [
+    finnhubKey,
+    setFinnhubKey,
+  ] = useState(
+    () =>
+      localStorage.getItem(
+        "apex_finnhub_key"
+      ) || ""
   );
 
   useEffect(() => {
     localStorage.setItem(
       "apex_portfolio",
-      JSON.stringify(portfolio)
+      JSON.stringify(
+        portfolio
+      )
     );
   }, [portfolio]);
 
@@ -81,66 +112,96 @@ export default function App() {
     );
   }, [finnhubKey]);
 
-  const resetPortfolio = () => {
-    if (
-      confirm(
-        "Portfolio auf Beispieldaten zurücksetzen?"
-      )
-    ) {
-      setPortfolio(initialPortfolio);
-    }
-  };
-
-  const sections = NAV.reduce(
-    (acc, item) => {
-      if (!acc[item.section]) {
-        acc[item.section] = [];
+  const resetPortfolio =
+    () => {
+      if (
+        confirm(
+          "Portfolio auf Beispieldaten zurücksetzen?"
+        )
+      ) {
+        setPortfolio(
+          initialPortfolio
+        );
       }
+    };
 
-      acc[item.section].push(item);
+  const sections =
+    NAV.reduce(
+      (acc, item) => {
+        if (
+          !acc[
+            item.section
+          ]
+        ) {
+          acc[
+            item.section
+          ] = [];
+        }
 
-      return acc;
-    },
-    {}
-  );
+        acc[
+          item.section
+        ].push(item);
+
+        return acc;
+      },
+      {}
+    );
 
   function renderPage() {
     return {
       dashboard: (
         <Dashboard
           fund={fund}
-          portfolio={portfolio}
+          portfolio={
+            portfolio
+          }
           quotes={{}}
         />
       ),
 
       markt: (
         <MarketData
-          finnhubKey={finnhubKey}
-          setFinnhubKey={setFinnhubKey}
+          finnhubKey={
+            finnhubKey
+          }
+          setFinnhubKey={
+            setFinnhubKey
+          }
         />
       ),
 
       portfolio: (
         <Portfolio
-          portfolio={portfolio}
-          setPortfolio={setPortfolio}
-          resetPortfolio={resetPortfolio}
+          portfolio={
+            portfolio
+          }
+          setPortfolio={
+            setPortfolio
+          }
+          resetPortfolio={
+            resetPortfolio
+          }
         />
       ),
 
       pipeline: (
         <DealPipeline
           deals={deals}
-          setDeals={setDeals}
+          setDeals={
+            setDeals
+          }
         />
       ),
 
-      lbo: <LBOCalculator />,
+      lbo: (
+        <LBOCalculator />
+      ),
 
       ai: (
         <AIAdvisor
-          portfolio={portfolio}
+          portfolio={
+            portfolio
+          }
           deals={deals}
         />
       ),
@@ -161,13 +222,17 @@ export default function App() {
         <TaskManager
           deals={deals}
           tasks={tasks}
-          setTasks={setTasks}
+          setTasks={
+            setTasks
+          }
         />
       ),
 
       search: (
         <Search
-          portfolio={portfolio}
+          portfolio={
+            portfolio
+          }
           deals={deals}
           tasks={tasks}
         />
@@ -175,7 +240,9 @@ export default function App() {
 
       notifications: (
         <Notifications
-          portfolio={portfolio}
+          portfolio={
+            portfolio
+          }
           deals={deals}
           tasks={tasks}
         />
@@ -183,12 +250,16 @@ export default function App() {
 
       reporting: (
         <Reporting
-          portfolio={portfolio}
+          portfolio={
+            portfolio
+          }
           fund={fund}
         />
       ),
 
-      settings: <Settings />,
+      settings: (
+        <Settings />
+      ),
     }[page];
   }
 
@@ -198,7 +269,8 @@ export default function App() {
         <div className="topbar-logo">
           APEX PE{" "}
           <span>
-            Private Equity OS
+            Private Equity
+            OS
           </span>
         </div>
 
@@ -229,7 +301,9 @@ export default function App() {
             section,
             items,
           ]) => (
-            <div key={section}>
+            <div
+              key={section}
+            >
               <div className="nav-section">
                 {section}
               </div>
@@ -237,7 +311,9 @@ export default function App() {
               {items.map(
                 (item) => (
                   <div
-                    key={item.id}
+                    key={
+                      item.id
+                    }
                     className={`nav-item ${
                       page ===
                       item.id
@@ -269,9 +345,12 @@ export default function App() {
 
       <main className="main">
         <CommandBar
-          portfolio={portfolio}
+          portfolio={
+            portfolio
+          }
           deals={deals}
           tasks={tasks}
+          setPage={setPage}
         />
 
         {renderPage()}
