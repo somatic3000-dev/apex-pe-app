@@ -1,23 +1,19 @@
 // src/pages/Dashboard.jsx
 
+import { initialPortfolio } from "../data/mockData";
+
 export default function Dashboard({ fund = {}, portfolio = [] }) {
-  const companies =
-    portfolio.length > 0
-      ? portfolio
-      : [];
+  const sourcePortfolio =
+    portfolio && portfolio.length > 0 ? portfolio : initialPortfolio;
 
-  const active = companies.filter(
-    (p) => (p.status || "").toLowerCase() === "active"
+  const companies = sourcePortfolio.filter(
+    (p) => (p.status || "").toLowerCase() !== "exit"
   );
-
-  const visibleCompanies = active.length > 0 ? active : companies;
 
   function companyValue(p) {
     const revenue = Number(p.revenue) || 0;
     const ebitda = Number(p.ebitda) || 0;
-    const multiple =
-      Number(p.currentMultiple) || Number(p.entryMultiple) || 0;
-
+    const multiple = Number(p.currentMultiple) || Number(p.entryMultiple) || 0;
     const value = ebitda * multiple;
 
     if (value > 0) return value;
@@ -32,44 +28,35 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
     return revenue > 0 ? (ebitda / revenue) * 100 : 0;
   }
 
-  const portfolioValue = visibleCompanies.reduce(
-    (sum, p) => sum + companyValue(p),
-    0
-  );
-
+  const portfolioValue = companies.reduce((sum, p) => sum + companyValue(p), 0);
   const dryPowder = Number(fund.dryPowder) || 0;
   const aum = portfolioValue + dryPowder;
 
-  const totalRevenue = visibleCompanies.reduce(
+  const totalRevenue = companies.reduce(
     (sum, p) => sum + (Number(p.revenue) || 0),
     0
   );
 
-  const totalEbitda = visibleCompanies.reduce(
+  const totalEbitda = companies.reduce(
     (sum, p) => sum + (Number(p.ebitda) || 0),
     0
   );
 
   const avgIrr =
-    visibleCompanies.length > 0
-      ? visibleCompanies.reduce((sum, p) => sum + (Number(p.irr) || 0), 0) /
-        visibleCompanies.length
+    companies.length > 0
+      ? companies.reduce((sum, p) => sum + (Number(p.irr) || 0), 0) /
+        companies.length
       : 0;
 
   const avgMoic =
-    visibleCompanies.length > 0
-      ? visibleCompanies.reduce((sum, p) => sum + (Number(p.moic) || 0), 0) /
-        visibleCompanies.length
+    companies.length > 0
+      ? companies.reduce((sum, p) => sum + (Number(p.moic) || 0), 0) /
+        companies.length
       : 0;
 
-  const maxValue =
-    Math.max(...visibleCompanies.map((p) => companyValue(p)), 1);
-
-  const maxIrr =
-    Math.max(...visibleCompanies.map((p) => Number(p.irr) || 0), 1);
-
-  const maxRevenue =
-    Math.max(...visibleCompanies.map((p) => Number(p.revenue) || 0), 1);
+  const maxValue = Math.max(...companies.map((p) => companyValue(p)), 1);
+  const maxIrr = Math.max(...companies.map((p) => Number(p.irr) || 0), 1);
+  const maxRevenue = Math.max(...companies.map((p) => Number(p.revenue) || 0), 1);
 
   return (
     <div className="fade-in">
@@ -86,7 +73,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
         <Metric label="AUM" value={`€${aum.toFixed(1)}M`} />
         <Metric label="Portfolio Value" value={`€${portfolioValue.toFixed(1)}M`} />
         <Metric label="Dry Powder" value={`€${dryPowder.toFixed(1)}M`} />
-        <Metric label="Companies" value={visibleCompanies.length} />
+        <Metric label="Companies" value={companies.length} />
         <Metric label="Gross IRR" value={`${avgIrr.toFixed(1)}%`} />
         <Metric label="MOIC" value={`${avgMoic.toFixed(2)}x`} />
         <Metric label="Revenue" value={`€${totalRevenue.toFixed(1)}m`} />
@@ -94,40 +81,13 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
       </div>
 
       <div className="market-grid" style={{ marginBottom: 20 }}>
-        <div className="market-card">
-          <div className="card-title">Fund Status</div>
-          <div className="market-card-name">
-            {fund.name || "APEX CAPITAL FUND I"}
-          </div>
-          <div className="muted">Vintage {fund.vintage || 2022}</div>
-          <div className="market-card-price" style={{ color: "var(--accent)" }}>
-            €{aum.toFixed(1)}M AUM
-          </div>
-          <div className="muted">
-            Portfolio Value: €{portfolioValue.toFixed(1)}M · Dry Powder: €
-            {dryPowder.toFixed(1)}M
-          </div>
-        </div>
-
-        <div className="market-card">
-          <div className="card-title">Portfolio Health</div>
-          <div className="market-card-name">
-            {avgIrr >= 25 ? "Top Quartile" : avgIrr >= 15 ? "On Track" : "Needs Attention"}
-          </div>
-          <div className="market-card-price" style={{ color: "var(--accent)" }}>
-            {avgIrr.toFixed(1)}%
-          </div>
-          <div className="muted">Average Gross IRR</div>
-        </div>
-      </div>
-
-      <div className="market-grid" style={{ marginBottom: 20 }}>
         <div className="card">
           <div className="card-title">Portfolio Allocation</div>
-          <div style={{ display: "grid", gap: 12 }}>
-            {visibleCompanies.map((p) => {
+
+          <div style={{ display: "grid", gap: 14 }}>
+            {companies.map((p) => {
               const value = companyValue(p);
-              const width = `${Math.max((value / maxValue) * 100, 6)}%`;
+              const width = `${Math.max((value / maxValue) * 100, 8)}%`;
 
               return (
                 <BarRow
@@ -144,10 +104,11 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
 
         <div className="card">
           <div className="card-title">IRR by Company</div>
-          <div style={{ display: "grid", gap: 12 }}>
-            {visibleCompanies.map((p) => {
+
+          <div style={{ display: "grid", gap: 14 }}>
+            {companies.map((p) => {
               const irr = Number(p.irr) || 0;
-              const width = `${Math.max((irr / maxIrr) * 100, 6)}%`;
+              const width = `${Math.max((irr / maxIrr) * 100, 8)}%`;
 
               return (
                 <BarRow
@@ -172,8 +133,8 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-title">Revenue vs EBITDA</div>
 
-        <div style={{ display: "grid", gap: 16 }}>
-          {visibleCompanies.map((p) => {
+        <div style={{ display: "grid", gap: 18 }}>
+          {companies.map((p) => {
             const revenue = Number(p.revenue) || 0;
             const ebitda = Number(p.ebitda) || 0;
 
@@ -183,7 +144,8 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginBottom: 6,
+                    marginBottom: 8,
+                    gap: 12,
                   }}
                 >
                   <strong>{p.name}</strong>
@@ -194,11 +156,11 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
 
                 <div style={{ display: "grid", gap: 6 }}>
                   <SimpleBar
-                    width={`${Math.max((revenue / maxRevenue) * 100, 5)}%`}
+                    width={`${Math.max((revenue / maxRevenue) * 100, 8)}%`}
                     color="var(--blue)"
                   />
                   <SimpleBar
-                    width={`${Math.max((ebitda / maxRevenue) * 100, 5)}%`}
+                    width={`${Math.max((ebitda / maxRevenue) * 100, 8)}%`}
                     color="var(--accent)"
                   />
                 </div>
@@ -228,7 +190,7 @@ export default function Dashboard({ fund = {}, portfolio = [] }) {
             </thead>
 
             <tbody>
-              {visibleCompanies.map((p) => (
+              {companies.map((p) => (
                 <tr key={p.id}>
                   <td>{p.name}</td>
                   <td>{p.sector}</td>
@@ -282,9 +244,10 @@ function SimpleBar({ width, color }) {
   return (
     <div
       style={{
-        height: 12,
+        height: 14,
+        width: "100%",
         borderRadius: 999,
-        background: "rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.10)",
         overflow: "hidden",
       }}
     >
@@ -292,6 +255,7 @@ function SimpleBar({ width, color }) {
         style={{
           height: "100%",
           width,
+          minWidth: 24,
           borderRadius: 999,
           background: color,
         }}
