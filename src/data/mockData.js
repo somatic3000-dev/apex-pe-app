@@ -151,6 +151,13 @@ export const NAV = [
   },
 
   {
+    id: "search",
+    label: "Search",
+    icon: "⌕",
+    section: "SYSTEM",
+  },
+
+  {
     id: "notifications",
     label: "Notifications",
     icon: "●",
