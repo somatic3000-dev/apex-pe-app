@@ -5,11 +5,12 @@ export default function Settings() {
 
   function exportBackup() {
     const data = {
-      version: "1.0",
+      version: "1.1",
       exportedAt: new Date().toISOString(),
       portfolio: JSON.parse(localStorage.getItem("apex_portfolio") || "[]"),
       deals: JSON.parse(localStorage.getItem("apex_deals") || "[]"),
       watchlist: JSON.parse(localStorage.getItem("apex_market_watchlist") || "[]"),
+      tasks: JSON.parse(localStorage.getItem("apex_tasks") || "[]"),
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -39,10 +40,11 @@ export default function Settings() {
       }
 
       if (data.watchlist) {
-        localStorage.setItem(
-          "apex_market_watchlist",
-          JSON.stringify(data.watchlist)
-        );
+        localStorage.setItem("apex_market_watchlist", JSON.stringify(data.watchlist));
+      }
+
+      if (data.tasks) {
+        localStorage.setItem("apex_tasks", JSON.stringify(data.tasks));
       }
 
       alert("Backup importiert. Bitte App neu laden.");
@@ -57,6 +59,7 @@ export default function Settings() {
     localStorage.removeItem("apex_portfolio");
     localStorage.removeItem("apex_deals");
     localStorage.removeItem("apex_market_watchlist");
+    localStorage.removeItem("apex_tasks");
 
     alert("Lokale Daten gelöscht. Bitte App neu laden.");
   }
@@ -76,7 +79,7 @@ export default function Settings() {
         <div className="market-card">
           <div className="card-title">Backup exportieren</div>
           <p className="muted">
-            Exportiert Portfolio, Deal Pipeline und Watchlist als JSON-Datei.
+            Exportiert Portfolio, Deal Pipeline, Watchlist und Tasks als JSON-Datei.
           </p>
           <button className="btn btn-primary" onClick={exportBackup}>
             BACKUP EXPORTIEREN
