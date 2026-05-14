@@ -98,6 +98,34 @@ export const WATCH_SYMBOLS = [
   "GOOGL",
   "META",
   "TSLA",
+  "SPY",
+  "QQQ",
+  "HYG",
+  "LQD",
+  "BX",
+  "KKR",
+  "APO",
+  "CG",
+];
+
+export const IC_MEMO_TEMPLATE = {
+  company: "",
+  sector: "",
+  investmentThesis: "",
+  risks: "",
+  valuation: "",
+  recommendation: "",
+};
+
+export const DD_CHECKLIST = [
+  "Financial DD",
+  "Legal DD",
+  "Commercial DD",
+  "Tax DD",
+  "ESG DD",
+  "Management Calls",
+  "Customer Calls",
+  "Data Room Review",
 ];
 
 export const NAV = [
@@ -144,9 +172,23 @@ export const NAV = [
   },
 
   {
+    id: "ic",
+    label: "IC Memo",
+    icon: "▦",
+    section: "ANALYSE",
+  },
+
+  {
+    id: "dd",
+    label: "Due Diligence",
+    icon: "▤",
+    section: "ANALYSE",
+  },
+
+  {
     id: "reporting",
     label: "LP Reporting",
-    icon: "▤",
+    icon: "▥",
     section: "REPORTING",
   },
 
