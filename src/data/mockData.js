@@ -22,7 +22,6 @@ export const initialPortfolio = [
     status: "Active",
     notes: "Starkes Wachstum im SaaS-Bereich.",
   },
-
   {
     id: 2,
     name: "MedTech Labs",
@@ -36,7 +35,6 @@ export const initialPortfolio = [
     status: "Active",
     notes: "Expansion nach Frankreich.",
   },
-
   {
     id: 3,
     name: "Green Energy GmbH",
@@ -64,7 +62,6 @@ export const initialDeals = [
     priority: "High",
     score: 82,
   },
-
   {
     id: 2,
     name: "CloudBase",
@@ -76,7 +73,6 @@ export const initialDeals = [
     priority: "Medium",
     score: 68,
   },
-
   {
     id: 3,
     name: "Industrial Systems",
@@ -117,6 +113,17 @@ export const IC_MEMO_TEMPLATE = {
   recommendation: "",
 };
 
+export const DD_CHECKLIST = [
+  "Financial DD",
+  "Legal DD",
+  "Commercial DD",
+  "Tax DD",
+  "ESG DD",
+  "Management Calls",
+  "Customer Calls",
+  "Data Room Review",
+];
+
 export const NAV = [
   {
     id: "dashboard",
@@ -124,56 +131,60 @@ export const NAV = [
     icon: "◈",
     section: "ÜBERSICHT",
   },
-
   {
     id: "markt",
     label: "Marktdaten",
     icon: "◎",
     section: "ÜBERSICHT",
   },
-
   {
     id: "portfolio",
     label: "Portfolio",
     icon: "▣",
     section: "PORTFOLIO",
   },
-
   {
     id: "pipeline",
     label: "Deal Pipeline",
     icon: "◉",
     section: "PORTFOLIO",
   },
-
   {
     id: "lbo",
     label: "LBO Rechner",
     icon: "∑",
     section: "ANALYSE",
   },
-
   {
     id: "ai",
     label: "KI Berater",
     icon: "◆",
     section: "ANALYSE",
   },
-
   {
     id: "ic",
     label: "IC Memo",
     icon: "▦",
     section: "ANALYSE",
   },
-
+  {
+    id: "dd",
+    label: "Due Diligence",
+    icon: "▤",
+    section: "ANALYSE",
+  },
   {
     id: "reporting",
     label: "LP Reporting",
-    icon: "▤",
+    icon: "▥",
     section: "REPORTING",
   },
-
+  {
+    id: "tasks",
+    label: "Tasks",
+    icon: "☑",
+    section: "SYSTEM",
+  },
   {
     id: "settings",
     label: "Settings",
