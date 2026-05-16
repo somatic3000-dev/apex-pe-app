@@ -51,7 +51,9 @@ export default function App() {
     loadSaved("apex_deals", initialDeals)
   );
 
-  const [tasks, setTasks] = useState(() => loadSaved("apex_tasks", []));
+  const [tasks, setTasks] = useState(() =>
+    loadSaved("apex_tasks", [])
+  );
 
   const [marketContext, setMarketContext] = useState({
     quotes: {},
@@ -79,6 +81,7 @@ export default function App() {
   const resetPortfolio = () => {
     if (confirm("Portfolio auf Beispieldaten zurücksetzen?")) {
       setPortfolio(initialPortfolio);
+      localStorage.setItem("apex_portfolio", JSON.stringify(initialPortfolio));
     }
   };
 
@@ -91,7 +94,12 @@ export default function App() {
       />
     ),
 
-    markt: <MarketData onMarketUpdate={setMarketContext} />,
+    markt: (
+      <MarketData
+        portfolio={portfolio}
+        onMarketUpdate={setMarketContext}
+      />
+    ),
 
     portfolio: (
       <Portfolio
@@ -113,9 +121,21 @@ export default function App() {
       />
     ),
 
-    reporting: <Reporting fund={initialFund} portfolio={portfolio} />,
+    reporting: (
+      <Reporting
+        fund={initialFund}
+        portfolio={portfolio}
+        marketContext={marketContext}
+      />
+    ),
 
-    tasks: <TaskManager deals={deals} tasks={tasks} setTasks={setTasks} />,
+    tasks: (
+      <TaskManager
+        deals={deals}
+        tasks={tasks}
+        setTasks={setTasks}
+      />
+    ),
 
     notifications: (
       <Notifications
@@ -126,9 +146,20 @@ export default function App() {
       />
     ),
 
-    search: <Search portfolio={portfolio} deals={deals} tasks={tasks} />,
+    search: (
+      <Search
+        portfolio={portfolio}
+        deals={deals}
+        tasks={tasks}
+      />
+    ),
 
-    icmemo: <ICMemo deals={deals} marketContext={marketContext} />,
+    icmemo: (
+      <ICMemo
+        deals={deals}
+        marketContext={marketContext}
+      />
+    ),
 
     settings: <Settings />,
   };
@@ -142,7 +173,9 @@ export default function App() {
 
         <div className="badge badge-green">LIVE</div>
 
-        <div className="date">{new Date().toLocaleDateString("de-DE")}</div>
+        <div className="date">
+          {new Date().toLocaleDateString("de-DE")}
+        </div>
       </div>
 
       <div className="sidebar">
