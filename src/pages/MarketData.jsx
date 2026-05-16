@@ -9,29 +9,91 @@ const API_KEY_STORAGE = "apex_finnhub_key";
 const ENV_FINNHUB_KEY = import.meta.env.VITE_FINNHUB_KEY || "";
 
 function normalizeWatchlist(items = []) {
-  return items.map((item) => {
-    if (typeof item === "string") {
-      return {
-        sym: item,
-        name: item,
-        relevance: "Watchlist",
-      };
-    }
+  return items
+    .map((item) => {
+      if (typeof item === "string") {
+        return {
+          sym: item,
+          name: item,
+          relevance: "Watchlist",
+        };
+      }
 
-    return {
-      sym: item.sym || item.symbol || item.name,
-      name: item.name || item.sym || item.symbol,
-      relevance: item.relevance || "Watchlist",
-    };
-  });
+      return {
+        sym: item.sym || item.symbol || item.ticker || item.name,
+        name: item.name || item.sym || item.symbol || item.ticker,
+        relevance: item.relevance || "Watchlist",
+      };
+    })
+    .filter((item) => item.sym);
 }
 
-export default function MarketData({ onMarketUpdate }) {
+function portfolioSymbolsFromPortfolio(portfolio = []) {
+  const symbols = [];
+
+  portfolio.forEach((company) => {
+    if (company.ticker) {
+      symbols.push({
+        sym: String(company.ticker).trim().toUpperCase(),
+        name: company.name,
+        relevance: "Portfolio",
+      });
+    }
+
+    const peers = Array.isArray(company.peerTickers)
+      ? company.peerTickers
+      : String(company.peerTickers || "")
+          .split(",")
+          .map((ticker) => ticker.trim())
+          .filter(Boolean);
+
+    peers.forEach((ticker) => {
+      symbols.push({
+        sym: String(ticker).trim().toUpperCase(),
+        name: String(ticker).trim().toUpperCase(),
+        relevance: `${company.name} Peer`,
+      });
+    });
+  });
+
+  return symbols;
+}
+
+function mergeWatchlists(base = [], additions = []) {
+  const map = new Map();
+
+  [...base, ...additions].forEach((item) => {
+    if (!item?.sym) return;
+
+    const sym = String(item.sym).trim().toUpperCase();
+
+    if (!map.has(sym)) {
+      map.set(sym, {
+        ...item,
+        sym,
+      });
+    }
+  });
+
+  return Array.from(map.values());
+}
+
+export default function MarketData({
+  portfolio = [],
+  onMarketUpdate,
+}) {
   const defaultSymbols = useMemo(() => normalizeWatchlist(WATCH_SYMBOLS), []);
+
+  const portfolioSymbols = useMemo(
+    () => portfolioSymbolsFromPortfolio(portfolio),
+    [portfolio]
+  );
 
   const [symbols, setSymbols] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? normalizeWatchlist(JSON.parse(saved)) : defaultSymbols;
+    const base = saved ? normalizeWatchlist(JSON.parse(saved)) : defaultSymbols;
+
+    return mergeWatchlists(base, portfolioSymbolsFromPortfolio(portfolio));
   });
 
   const [ticker, setTicker] = useState("");
@@ -47,6 +109,10 @@ export default function MarketData({ onMarketUpdate }) {
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  useEffect(() => {
+    setSymbols((prev) => mergeWatchlists(prev, portfolioSymbols));
+  }, [portfolioSymbols]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(symbols));
@@ -163,7 +229,7 @@ export default function MarketData({ onMarketUpdate }) {
   }
 
   function resetSymbols() {
-    setSymbols(defaultSymbols);
+    setSymbols(mergeWatchlists(defaultSymbols, portfolioSymbols));
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -176,7 +242,7 @@ export default function MarketData({ onMarketUpdate }) {
           </div>
 
           <div className="page-sub">
-            Finnhub Live Watchlist · Public Markets · PE Benchmarks
+            Finnhub Live Watchlist · Portfolio Ticker · Public Peers
           </div>
         </div>
 
